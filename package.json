@@ -8,7 +8,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "mixin": "git@github.com:kleevs/mixin.git"
   },
   "devDependencies": {    
     "@types/node": "^7.0.14",
