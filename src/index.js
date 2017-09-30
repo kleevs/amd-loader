@@ -51,6 +51,10 @@ var AMDLoader;
         });
     }
     function load(uris, callback) {
+        if (arguments.length >= 3) {
+            uris = arguments[1];
+            callback = arguments[2];
+        }
         let array = [], exports, launch, promise = new Promise((resolve, reject) => {
             launch = resolve;
         });

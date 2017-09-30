@@ -64,6 +64,11 @@ module AMDLoader {
     }
 
     export function load(uris: string[], callback: Function) {
+        if (arguments.length >= 3) {
+            uris = arguments[1];
+            callback = arguments[2];
+        }
+        
         let array: any[] = [],
             exports,
             launch,
