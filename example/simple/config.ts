@@ -1,4 +1,4 @@
 namespace Config {
     console.log("yo");
-    (<any>window).require("index");
+    (<any>window).require("./index");
 }

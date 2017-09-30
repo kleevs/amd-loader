@@ -13,10 +13,12 @@ let server = http.createServer(function(req, res) {
         if (err) {
             console.log(root + uri + " doesn't exist.");
             content = undefined;
+            res.writeHead(404);
+            res.end(content);
+        } else {
+            res.writeHead(200);
+            res.end(content);
         }
-
-        res.writeHead(200);
-        res.end(content);
     });
 });
 
