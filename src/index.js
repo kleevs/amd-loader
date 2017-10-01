@@ -1,6 +1,5 @@
 var AMDLoader;
 (function (AMDLoader) {
-    AMDLoader.baseUrl = ".";
     AMDLoader.paths = {};
     let modules = {};
     let current;
@@ -16,35 +15,34 @@ var AMDLoader;
         return uri && clean(uri.split("/")).join("/");
     }
     function getUrl(uri) {
-        return new URL([AMDLoader.baseUrl, uri].join("/"), location.href).href.replace(location.origin, "");
+        return new URL(["", cleanUri(uri)].join("/"), location.href).href.replace(location.origin, "");
     }
     function getName(uri) {
         if (AMDLoader.paths) {
             for (var key in AMDLoader.paths) {
                 if (uri.indexOf(key + "/") === 0) {
-                    return map((AMDLoader.paths[key] + "/" + uri).replace(/\\/gi, "/").split("/"), x => x).join("/");
+                    return map(uri.replace(key, AMDLoader.paths[key]).replace(/\\/gi, "/").split("/"), x => x).join("/");
                 }
             }
         }
         return cleanUri(uri);
     }
-    function create(name) {
-        var script = document.createElement('script'), url = getUrl(name);
-        if (modules[name])
-            return new Promise(resolve => resolve(modules[name].module_promise));
+    function create(url) {
+        var script = document.createElement('script'), module = modules[url];
+        if (module)
+            return new Promise(resolve => resolve(module.module_promise));
         script.async = true;
-        script.src = name + ".js";
-        script.setAttribute("data-name", name);
-        modules[name] = script;
+        script.src = url + ".js";
+        module = modules[url] = script;
         window.document.head.appendChild(script);
-        return modules[name].module_promise = new Promise(resolve => {
+        return module.module_promise = new Promise(resolve => {
             script.onload = script.onreadystatechange = () => {
                 current && current.promise && current.promise.then((value) => {
                     script.module = value;
                     resolve(value);
                 });
                 (!current || !current.promise) && resolve();
-                var tmp = name.split("/");
+                var tmp = url.split("/");
                 tmp[tmp.length - 1] = "";
                 current.launch(tmp.join("/"));
             };
@@ -68,18 +66,18 @@ var AMDLoader;
                 var isRelative = name.indexOf(".") === 0 ? true : false;
                 if (isRelative) {
                     var tmp = name.split("/");
-                    tmp[0] = data.baseUrl;
+                    tmp[0] = tmp[0] === "." && data.baseUrl || (data.baseUrl + "/" + tmp[0]);
                     name = tmp.join("/");
                 }
                 return cleanUri(name);
             }, require = (name) => {
-                return get(getAbsoluteUrl(name));
+                return get(getUrl(getName(getAbsoluteUrl(name))));
             }, exports;
             data.uris.forEach((uri, index) => {
                 array[index] =
                     uri === "exports" && {} ||
                         uri === "require" && require ||
-                        create(getName(getAbsoluteUrl(uri)));
+                        create(getUrl(getName(getAbsoluteUrl(uri))));
                 uri === "exports" && (exports = array[index]);
             });
             return Promise.all(array).then((results) => {
@@ -90,14 +88,16 @@ var AMDLoader;
     }
     AMDLoader.load = load;
     function get(name) {
-        name = getName(name);
         return modules[name] ? modules[name].module : (create(name), undefined);
     }
     AMDLoader.get = get;
     window.define = load;
     window.define.amd = true;
     window.require = get;
-    window.require.paths = AMDLoader.paths;
+    Object.defineProperty(window.require, "paths", {
+        get: () => AMDLoader.paths,
+        set: (value) => AMDLoader.paths = value
+    });
 })(AMDLoader || (AMDLoader = {}));
 (function (factory) {
     var define = window.define;

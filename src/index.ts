@@ -1,5 +1,4 @@
 module AMDLoader {
-    export let baseUrl: string = ".";
     export let paths: any = {};
     let modules: any = {};
     let current: {
@@ -22,14 +21,14 @@ module AMDLoader {
     }
 
     function getUrl(uri: string): string {
-         return new URL([baseUrl, uri].join("/"), location.href).href.replace(location.origin, "");
+         return new URL(["", cleanUri(uri)].join("/"), location.href).href.replace(location.origin, "");
     }
     
     function getName(uri: string): string {
         if (paths) {
             for(var key in paths) {
                 if (uri.indexOf(key + "/") === 0) { 
-                    return map((paths[key] + "/" + uri).replace(/\\/gi, "/").split("/"), x => x).join("/");
+                    return map(uri.replace(key, AMDLoader.paths[key]).replace(/\\/gi, "/").split("/"), x => x).join("/");
                 }
             }
         }
@@ -37,18 +36,17 @@ module AMDLoader {
         return cleanUri(uri);
    }
 
-    function create(name: string): Promise<any> {
+    function create(url: string): Promise<any> {
         var script = document.createElement('script'),
-            url = getUrl(name);
+            module = modules[url];
 
-        if (modules[name]) return new Promise(resolve => resolve(modules[name].module_promise));
+        if (module) return new Promise(resolve => resolve(module.module_promise));
 
         script.async = true;
-        script.src = name + ".js";
-        script.setAttribute("data-name", name);
-        modules[name] = script;
+        script.src = url + ".js";
+        module = modules[url] = script;
         window.document.head.appendChild(script);
-        return modules[name].module_promise = new Promise(resolve => {
+        return module.module_promise = new Promise(resolve => {
             script.onload = (<any>script).onreadystatechange = () => {
                 current && current.promise && current.promise.then((value) => {
                     (<any>script).module = value;
@@ -56,7 +54,7 @@ module AMDLoader {
                 });
                 (!current || !current.promise) && resolve();
 
-                var tmp = name.split("/");
+                var tmp = url.split("/");
                 tmp[tmp.length-1] = "";
                 current.launch(tmp.join("/"));
             };
@@ -88,14 +86,14 @@ module AMDLoader {
                     var isRelative = name.indexOf(".") === 0 ? true : false;
                     if (isRelative) { 
                         var tmp = name.split("/");
-                        tmp[0] = data.baseUrl;
+                        tmp[0] = tmp[0] === "." && data.baseUrl || (data.baseUrl + "/" + tmp[0]);
                         name = tmp.join("/");
                      }
 
                      return cleanUri(name);
                 },
                 require = (name: string) => { 
-                    return get(getAbsoluteUrl(name));
+                    return get(getUrl(getName(getAbsoluteUrl(name))));
                 },
                 exports;
 
@@ -103,7 +101,7 @@ module AMDLoader {
                 array[index] = 
                     uri === "exports" && {} ||
                     uri === "require" && require ||
-                    create(getName(getAbsoluteUrl(uri)));
+                    create(getUrl(getName(getAbsoluteUrl(uri))));
 
                 uri === "exports" && (exports = array[index]);
             });
@@ -116,14 +114,16 @@ module AMDLoader {
     }
 
     export function get(name: string) {
-        name = getName(name);
         return modules[name] ? modules[name].module : (create(name), undefined);
     }
 
     (<any>window).define = load;
     (<any>window).define.amd = true;
     (<any>window).require = get;
-    (<any>window).require.paths = paths;
+    Object.defineProperty((<any>window).require, "paths",{
+        get: () => paths,
+        set: (value) => paths = value
+    });
 }
 
 (function (factory) {
