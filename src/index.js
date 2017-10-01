@@ -31,13 +31,13 @@ var AMDLoader;
     function create(name) {
         var script = document.createElement('script'), url = getUrl(name);
         if (modules[name])
-            return new Promise(resolve => resolve(get(name)));
+            return new Promise(resolve => resolve(modules[name].module_promise));
         script.async = true;
         script.src = name + ".js";
         script.setAttribute("data-name", name);
         modules[name] = script;
         window.document.head.appendChild(script);
-        return new Promise(resolve => {
+        return modules[name].module_promise = new Promise(resolve => {
             script.onload = script.onreadystatechange = () => {
                 current && current.promise && current.promise.then((value) => {
                     script.module = value;
