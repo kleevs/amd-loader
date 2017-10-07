@@ -1,106 +1,72 @@
 var AMDLoader;
 (function (AMDLoader) {
-    AMDLoader.paths = {};
+    let paths = {};
     let modules = {};
     let current;
     function map(array, parse) {
         let res = [];
-        array.forEach((x) => { var y = parse(x); y !== undefined && res.push(y); });
+        array.forEach((x, i) => { var y = parse(x, i); y !== undefined && res.push(y); });
         return res;
     }
     function clean(array) {
-        return map(array, x => x || undefined);
+        return map(array, (x, i) => x || i <= 0 ? x : undefined);
     }
-    function cleanUri(uri) {
-        return uri && clean(uri.split("/")).join("/");
+    function getUrl(baseUrl, uri) {
+        var cleanUriArray = clean(uri.replace(/\\/gi, "/").split("/"));
+        var str = cleanUriArray[0].indexOf(".") === 0 && clean([].concat(clean(baseUrl.replace(/\\/gi, "/").split("/"))).concat(cleanUriArray)).join("/") ||
+            paths && paths[cleanUriArray[0]] && (cleanUriArray[0] = paths[cleanUriArray[0]]) && cleanUriArray.join("/") || cleanUriArray.join("/");
+        return new URL(str, location.href).href.replace(location.origin, "");
     }
-    function getUrl(uri) {
-        return new URL(["", cleanUri(uri)].join("/"), location.href).href.replace(location.origin, "");
-    }
-    function getName(uri) {
-        if (AMDLoader.paths) {
-            for (var key in AMDLoader.paths) {
-                if (uri.indexOf(key + "/") === 0) {
-                    return map(uri.replace(key, AMDLoader.paths[key]).replace(/\\/gi, "/").split("/"), x => x).join("/");
-                }
-            }
-        }
-        return cleanUri(uri);
-    }
-    function create(url) {
+    function download(url) {
         var script = document.createElement('script'), module = modules[url];
         if (module)
-            return new Promise(resolve => resolve(module.module_promise));
+            return new Promise(resolve => resolve(module.promise));
         script.async = true;
         script.src = url + ".js";
-        module = modules[url] = script;
+        module = modules[url] = {};
+        module.script = script;
         window.document.head.appendChild(script);
-        return module.module_promise = new Promise(resolve => {
+        return module.promise = new Promise(resolve => {
             script.onload = script.onreadystatechange = () => {
-                current && current.promise && current.promise.then((value) => {
-                    script.module = value;
-                    resolve(value);
-                });
-                (!current || !current.promise) && resolve();
-                var tmp = url.split("/");
+                var tmp = script.src.replace(location.origin, "").split("/");
                 tmp[tmp.length - 1] = "";
-                current.launch(tmp.join("/"));
+                current && current({ baseUrl: tmp.join("/"), resolve: (m) => resolve(module.value = m) });
             };
         });
     }
-    function load(uris, callback) {
+    function define(uris, callback) {
         if (arguments.length >= 3) {
             uris = arguments[1];
             callback = arguments[2];
         }
-        let array = [], exports, launch, promise = new Promise((resolve, reject) => {
-            launch = resolve;
-        });
-        current = {
-            launch: (baseUrl) => {
-                launch && launch({ uris: uris, baseUrl: baseUrl });
-            }
-        };
-        current.promise = promise.then((data) => {
-            let array = [], getAbsoluteUrl = (name) => {
-                var isRelative = name.indexOf(".") === 0 ? true : false;
-                if (isRelative) {
-                    var tmp = name.split("/");
-                    tmp[0] = tmp[0] === "." && data.baseUrl || (data.baseUrl + "/" + tmp[0]);
-                    name = tmp.join("/");
-                }
-                return cleanUri(name);
-            }, require = (name) => {
-                return get(getUrl(getName(getAbsoluteUrl(name))));
-            }, exports;
-            data.uris.forEach((uri, index) => {
-                array[index] =
-                    uri === "exports" && {} ||
-                        uri === "require" && require ||
-                        create(getUrl(getName(getAbsoluteUrl(uri))));
-                uri === "exports" && (exports = array[index]);
-            });
-            return Promise.all(array).then((results) => {
+        new Promise((resolve, reject) => {
+            current = resolve;
+        }).then((data) => {
+            var baseUrl = data.baseUrl, resolve = data.resolve, exports = {}, req = (uri) => require(getUrl(baseUrl, uri));
+            Promise.all(map(uris, (uri) => {
+                return uri === "exports" && exports ||
+                    uri === "require" && req ||
+                    download(getUrl(baseUrl, uri));
+            })).then((results) => {
                 var module = callback.apply(null, results) || exports;
-                return module;
+                resolve && resolve(module);
             });
         });
     }
-    AMDLoader.load = load;
-    function get(name) {
-        return modules[name] ? modules[name].module : (create(name), undefined);
+    AMDLoader.define = define;
+    function require(uri) {
+        return modules[uri] ? modules[uri].value : (download(uri), undefined);
     }
-    AMDLoader.get = get;
-    window.define = load;
-    window.define.amd = true;
-    window.require = get;
-    Object.defineProperty(window.require, "paths", {
-        get: () => AMDLoader.paths,
-        set: (value) => AMDLoader.paths = value
+    AMDLoader.require = require;
+    Object.defineProperty(define, "amd", { value: true });
+    Object.defineProperty(require, "paths", {
+        get: () => paths,
+        set: (value) => paths = value
     });
 })(AMDLoader || (AMDLoader = {}));
 (function (factory) {
-    var define = window.define;
+    var context = window;
+    var define = context.define;
     if (typeof module === "object" && typeof module.exports === "object") {
         var v = factory(require, exports);
         if (v !== undefined)
@@ -109,12 +75,16 @@ var AMDLoader;
     else if (typeof define === "function" && define.amd) {
         define(["require", "exports"], factory);
     }
+    else {
+        factory(null, window);
+    }
 })(function (require, exports) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
+    var context = window;
+    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
     for (var i in AMDLoader) {
         exports[i] = AMDLoader[i];
     }
-    window.AMDLoader = undefined;
+    context.AMDLoader = undefined;
 });
 //# sourceMappingURL=index.js.map

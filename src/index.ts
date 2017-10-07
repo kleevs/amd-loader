@@ -1,146 +1,101 @@
 module AMDLoader {
-    export let paths: any = {};
+    let paths: any = {};
     let modules: any = {};
-    let current: {
-        launch?: (baseUrl: string) => void,
-        promise?: Promise<any>
-    };
+    let current: any;
 
-    function map<T1, T2>(array: T1[], parse: (x: T1) => T2): T2[] {
+    function map<T1, T2>(array: T1[], parse: (x: T1, index?: number) => T2): T2[] {
         let res = [];
-        array.forEach((x) => { var y = parse(x); y !== undefined && res.push(y); });
+        array.forEach((x, i) => { var y = parse(x, i); y !== undefined && res.push(y); });
         return res;
     }
 
     function clean<T>(array: T[]): T[] {
-        return map(array, x => x || undefined);
+        return map(array, (x, i) => x || i <= 0 ? x : undefined);
     }
 
-    function cleanUri(uri: string): string {
-        return uri && clean(uri.split("/")).join("/");
+    function getUrl(baseUrl: string, uri: string): string {
+		var cleanUriArray = clean(uri.replace(/\\/gi, "/").split("/"));
+		var str = cleanUriArray[0].indexOf(".") === 0 && clean([].concat(clean(baseUrl.replace(/\\/gi, "/").split("/"))).concat(cleanUriArray)).join("/") || 
+			paths && paths[cleanUriArray[0]] && (cleanUriArray[0] = paths[cleanUriArray[0]]) && cleanUriArray.join("/") || cleanUriArray.join("/");
+        return new URL(str, location.href).href.replace(location.origin, "");
     }
-
-    function getUrl(uri: string): string {
-         return new URL(["", cleanUri(uri)].join("/"), location.href).href.replace(location.origin, "");
-    }
-    
-    function getName(uri: string): string {
-        if (paths) {
-            for(var key in paths) {
-                if (uri.indexOf(key + "/") === 0) { 
-                    return map(uri.replace(key, AMDLoader.paths[key]).replace(/\\/gi, "/").split("/"), x => x).join("/");
-                }
-            }
-        }
-
-        return cleanUri(uri);
-   }
-
-    function create(url: string): Promise<any> {
-        var script = document.createElement('script'),
+	
+	function download(url: string): Promise<any> {
+		var script = document.createElement('script'),
             module = modules[url];
 
-        if (module) return new Promise(resolve => resolve(module.module_promise));
+        if (module) return new Promise(resolve => resolve(module.promise));
 
         script.async = true;
         script.src = url + ".js";
-        module = modules[url] = script;
+        module = modules[url] = {};
+		module.script = script;
         window.document.head.appendChild(script);
-        return module.module_promise = new Promise(resolve => {
+        return module.promise = new Promise(resolve => {
             script.onload = (<any>script).onreadystatechange = () => {
-                current && current.promise && current.promise.then((value) => {
-                    (<any>script).module = value;
-                    resolve(value);
-                });
-                (!current || !current.promise) && resolve();
-
-                var tmp = url.split("/");
+                var tmp = script.src.replace(location.origin, "").split("/");
                 tmp[tmp.length-1] = "";
-                current.launch(tmp.join("/"));
+				current && current({ baseUrl: tmp.join("/"), resolve: (m) => resolve(module.value = m) });
             };
         });
-    }
+	}
 
-    export function load(uris: string[], callback: Function) {
+	export function define(uris: string[], callback: Function) {
         if (arguments.length >= 3) {
             uris = arguments[1];
             callback = arguments[2];
         }
-        
-        let array: any[] = [],
-            exports,
-            launch,
-            promise = new Promise((resolve, reject) => {
-                launch = resolve;
-            });
 
-        current = {
-            launch: (baseUrl: string) => {
-                launch && launch({ uris: uris, baseUrl: baseUrl });
-            }
-        };
-
-        current.promise = promise.then((data: { uris: string[], baseUrl: string }) => {
-            let array: any[] = [],
-                getAbsoluteUrl = (name: string) => {
-                    var isRelative = name.indexOf(".") === 0 ? true : false;
-                    if (isRelative) { 
-                        var tmp = name.split("/");
-                        tmp[0] = tmp[0] === "." && data.baseUrl || (data.baseUrl + "/" + tmp[0]);
-                        name = tmp.join("/");
-                     }
-
-                     return cleanUri(name);
-                },
-                require = (name: string) => { 
-                    return get(getUrl(getName(getAbsoluteUrl(name))));
-                },
-                exports;
-
-            data.uris.forEach((uri, index) => {
-                array[index] = 
-                    uri === "exports" && {} ||
-                    uri === "require" && require ||
-                    create(getUrl(getName(getAbsoluteUrl(uri))));
-
-                uri === "exports" && (exports = array[index]);
-            });
-
-            return Promise.all(array).then((results) => {
-                var module = callback.apply(null, results) || exports;
-                return module;
-            });
-        });
+        new Promise((resolve, reject) => {
+			current = resolve;
+		}).then((data: {baseUrl: string, resolve: (arg) => void}) => {
+			var baseUrl = data.baseUrl,
+				resolve = data.resolve,
+				exports = {},
+				req = (uri) => require(getUrl(baseUrl, uri));
+				
+			Promise.all(map(uris, (uri) => {
+				return uri === "exports" && exports ||
+					uri === "require" && req ||
+					download(getUrl(baseUrl, uri));
+			})).then((results) => {
+				var module = callback.apply(null, results) || exports;
+				resolve && resolve(module);
+			});
+		});
+    }
+	
+    export function require(uri: string) {
+        return modules[uri] ? modules[uri].value : (download(uri), undefined);
     }
 
-    export function get(name: string) {
-        return modules[name] ? modules[name].module : (create(name), undefined);
-    }
-
-    (<any>window).define = load;
-    (<any>window).define.amd = true;
-    (<any>window).require = get;
-    Object.defineProperty((<any>window).require, "paths",{
+	Object.defineProperty(define, "amd", { value: true });
+    Object.defineProperty(require, "paths",{
         get: () => paths,
         set: (value) => paths = value
     });
 }
 
 (function (factory) {
-    var define = (<any>window).define;
+	var context:any = window;
+    var define = context.define;
+	
     if (typeof module === "object" && typeof module.exports === "object") {
         var v = factory(require, exports);
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
         define(["require", "exports"], factory);
-    }
+    } else {
+		factory(null, window);
+	}
 })(function (require, exports) {
     "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
+	var context:any = window;
+    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
     for (var i in AMDLoader) {
         exports[i] = AMDLoader[i];
     }
 
-    (<any>window).AMDLoader = undefined;
+    context.AMDLoader = undefined;
 })
