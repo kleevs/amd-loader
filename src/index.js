@@ -48,14 +48,25 @@ var AMDLoader;
                     uri === "require" && req ||
                     download(getUrl(baseUrl, uri));
             })).then((results) => {
-                var module = callback.apply(null, results) || exports;
+                var module = callback && callback.apply(null, results) || exports;
                 resolve && resolve(module);
             });
         });
     }
     AMDLoader.define = define;
-    function require(uri) {
-        return modules[uri] ? modules[uri].value : (download(uri), undefined);
+    function require(uri, callback) {
+        if (callback && modules[uri]) {
+            setTimeout(() => {
+                callback(undefined, undefined, modules[uri].value);
+            });
+            return undefined;
+        }
+        return modules[uri] ? modules[uri].value : (setTimeout(() => {
+            var tmp = location.href.replace(location.origin, "").split("/");
+            tmp[tmp.length - 1] = "";
+            define([uri], callback);
+            current && current({ baseUrl: tmp.join("/"), resolve: null });
+        }), undefined);
     }
     AMDLoader.require = require;
     Object.defineProperty(define, "amd", { value: true });

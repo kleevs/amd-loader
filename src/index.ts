@@ -59,14 +59,26 @@ module AMDLoader {
 					uri === "require" && req ||
 					download(getUrl(baseUrl, uri));
 			})).then((results) => {
-				var module = callback.apply(null, results) || exports;
+				var module = callback && callback.apply(null, results) || exports;
 				resolve && resolve(module);
 			});
 		});
     }
 	
-    export function require(uri: string) {
-        return modules[uri] ? modules[uri].value : (download(uri), undefined);
+    export function require(uri: string, callback?: Function) {
+        if (callback && modules[uri]) { 
+            setTimeout(() => { 
+				callback(undefined, undefined, modules[uri].value); 
+			});
+            return undefined;
+        }
+
+        return modules[uri] ? modules[uri].value : (setTimeout(() => {
+            var tmp = location.href.replace(location.origin, "").split("/");
+            tmp[tmp.length-1] = "";
+            define([uri], callback);
+            current && current({ baseUrl: tmp.join("/"), resolve: null });            
+        }), undefined);
     }
 
 	Object.defineProperty(define, "amd", { value: true });

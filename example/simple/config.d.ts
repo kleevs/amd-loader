@@ -1,2 +1,1 @@
-declare namespace Config {
-}
+export declare let conf: {};

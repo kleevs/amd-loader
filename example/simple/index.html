@@ -10,7 +10,10 @@
 <body>
     <script src="../../src/index.js"></script>
     <script>
-        require("./config");
+        require("./config", (config) => {
+            console.log("yep");
+            console.log(config);
+        });
     </script>
 </body>
 </html>
