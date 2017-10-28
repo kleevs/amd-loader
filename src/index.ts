@@ -1,4 +1,22 @@
-module AMDLoader {
+
+(function (factory) {
+	var context:any = window;
+    var define = context.define;
+	
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
+    }
+    else if (typeof define === "function" && define.amd) {
+        define(["require", "exports"], factory);
+    } else {
+		factory(null, window);
+	}
+})(function (req, exports) {
+    "use strict";
+	var context:any = window;
+    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
+
     let paths: any = {};
     let modules: any = {};
     let current: any;
@@ -40,7 +58,7 @@ module AMDLoader {
         });
 	}
 
-	export function define(uris: string[], callback: Function) {
+	function define(uris: string[], callback: Function) {
         if (arguments.length >= 3) {
             uris = arguments[1];
             callback = arguments[2];
@@ -65,7 +83,7 @@ module AMDLoader {
 		});
     }
 	
-    export function require(uri: string, callback?: Function) {
+    function require(uri: string, callback?: Function) {
         if (callback && modules[uri]) { 
             setTimeout(() => { 
 				callback(undefined, undefined, modules[uri].value); 
@@ -86,28 +104,7 @@ module AMDLoader {
         get: () => paths,
         set: (value) => paths = value
     });
-}
 
-(function (factory) {
-	var context:any = window;
-    var define = context.define;
-	
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined) module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
-        define(["require", "exports"], factory);
-    } else {
-		factory(null, window);
-	}
-})(function (require, exports) {
-    "use strict";
-	var context:any = window;
-    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
-    for (var i in AMDLoader) {
-        exports[i] = AMDLoader[i];
-    }
-
-    context.AMDLoader = undefined;
-})
+    exports.define = define;
+    exports.require = require;
+});

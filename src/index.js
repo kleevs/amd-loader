@@ -1,5 +1,21 @@
-var AMDLoader;
-(function (AMDLoader) {
+(function (factory) {
+    var context = window;
+    var define = context.define;
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined)
+            module.exports = v;
+    }
+    else if (typeof define === "function" && define.amd) {
+        define(["require", "exports"], factory);
+    }
+    else {
+        factory(null, window);
+    }
+})(function (req, exports) {
+    "use strict";
+    var context = window;
+    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
     let paths = {};
     let modules = {};
     let current;
@@ -53,7 +69,6 @@ var AMDLoader;
             });
         });
     }
-    AMDLoader.define = define;
     function require(uri, callback) {
         if (callback && modules[uri]) {
             setTimeout(() => {
@@ -68,34 +83,12 @@ var AMDLoader;
             current && current({ baseUrl: tmp.join("/"), resolve: null });
         }), undefined);
     }
-    AMDLoader.require = require;
     Object.defineProperty(define, "amd", { value: true });
     Object.defineProperty(require, "paths", {
         get: () => paths,
         set: (value) => paths = value
     });
-})(AMDLoader || (AMDLoader = {}));
-(function (factory) {
-    var context = window;
-    var define = context.define;
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
-        if (v !== undefined)
-            module.exports = v;
-    }
-    else if (typeof define === "function" && define.amd) {
-        define(["require", "exports"], factory);
-    }
-    else {
-        factory(null, window);
-    }
-})(function (require, exports) {
-    "use strict";
-    var context = window;
-    exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
-    for (var i in AMDLoader) {
-        exports[i] = AMDLoader[i];
-    }
-    context.AMDLoader = undefined;
+    exports.define = define;
+    exports.require = require;
 });
 //# sourceMappingURL=index.js.map
