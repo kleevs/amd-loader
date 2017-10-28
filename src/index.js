@@ -1,8 +1,14 @@
 (function (factory) {
-    var context = window;
+    var context = typeof window !== 'undefined' && window ? window : {};
     var define = context.define;
     if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports);
+        var v = factory(require, exports, { document: {}, href: "" /*__filename*/, origin: "/", URL: class {
+                constructor(str, origin) {
+                    this.str = str;
+                    this.origin = origin;
+                }
+                get href() { return [this.str, this.origin].join("/"); }
+            } });
         if (v !== undefined)
             module.exports = v;
     }
@@ -10,12 +16,16 @@
         define(["require", "exports"], factory);
     }
     else {
-        factory(null, window);
+        factory(null, context);
     }
-})(function (req, exports) {
+})(function (req, exports, nodejs) {
     "use strict";
-    var context = window;
+    var context = typeof window !== 'undefined' && window ? window : {};
     exports !== context && Object.defineProperty(exports, "__esModule", { value: true });
+    var document = nodejs ? nodejs.document : context.document;
+    var href = nodejs ? nodejs.href : location.href;
+    var origin = nodejs ? nodejs.origin : location.origin;
+    var URL = nodejs ? nodejs.URL : context.URL;
     let paths = {};
     let modules = {};
     let current;
@@ -27,28 +37,43 @@
     function clean(array) {
         return map(array, (x, i) => x || i <= 0 ? x : undefined);
     }
+    function getCurrentPath() {
+        return href;
+    }
+    function getOriginPath() {
+        return origin;
+    }
     function getUrl(baseUrl, uri) {
         var cleanUriArray = clean(uri.replace(/\\/gi, "/").split("/"));
         var str = cleanUriArray[0].indexOf(".") === 0 && clean([].concat(clean(baseUrl.replace(/\\/gi, "/").split("/"))).concat(cleanUriArray)).join("/") ||
             paths && paths[cleanUriArray[0]] && (cleanUriArray[0] = paths[cleanUriArray[0]]) && cleanUriArray.join("/") || cleanUriArray.join("/");
-        return new URL(str, location.href).href.replace(location.origin, "");
+        return new URL(str, getCurrentPath()).href.replace(getOriginPath(), "");
     }
     function download(url) {
-        var script = document.createElement('script'), module = modules[url];
+        var script, module = modules[url];
         if (module)
             return new Promise(resolve => resolve(module.promise));
+        if (nodejs)
+            return downloadNodeJs(url);
+        script = document.createElement('script');
+        module = modules[url];
         script.async = true;
         script.src = url + ".js";
         module = modules[url] = {};
         module.script = script;
-        window.document.head.appendChild(script);
+        document.head.appendChild(script);
         return module.promise = new Promise(resolve => {
             script.onload = script.onreadystatechange = () => {
-                var tmp = script.src.replace(location.origin, "").split("/");
+                var tmp = script.src.replace(getOriginPath(), "").split("/");
                 tmp[tmp.length - 1] = "";
                 current && current({ baseUrl: tmp.join("/"), resolve: (m) => resolve(module.value = m) });
             };
         });
+    }
+    function downloadNodeJs(url) {
+        var module = modules[url];
+        module = modules[url] = {};
+        return new Promise((resolve) => { resolve(); });
     }
     function define(uris, callback) {
         if (arguments.length >= 3) {
@@ -64,7 +89,7 @@
                     uri === "require" && req ||
                     download(getUrl(baseUrl, uri));
             })).then((results) => {
-                var module = callback && callback.apply(null, results) || exports;
+                var module = callback && !nodejs && callback.apply(null, results) || exports;
                 resolve && resolve(module);
             });
         });
@@ -77,10 +102,10 @@
             return undefined;
         }
         return modules[uri] ? modules[uri].value : (setTimeout(() => {
-            var tmp = location.href.replace(location.origin, "").split("/");
+            var tmp = getCurrentPath().replace(getOriginPath(), "").split("/");
             tmp[tmp.length - 1] = "";
             define([uri], callback);
-            current && current({ baseUrl: tmp.join("/"), resolve: null });
+            current && current({ baseUrl: tmp.join("/"), resolve: nodejs && callback });
         }), undefined);
     }
     Object.defineProperty(define, "amd", { value: true });
@@ -90,5 +115,8 @@
     });
     exports.define = define;
     exports.require = require;
+    Object.defineProperty(require, "modules", {
+        get: () => modules
+    });
 });
 //# sourceMappingURL=index.js.map
