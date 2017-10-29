@@ -4,10 +4,20 @@
     var define = context.define;
 	
     if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports, { document: {}, href: ""/*__filename*/, origin: "/", URL: class {
-            constructor(private str, private origin) {}
-            get href(): string { return [this.str, this.origin].join("/"); }
-        }});
+        var v = factory(require, exports, { 
+            document: {}, 
+            href: ""/*__filename*/, 
+            origin: "/", 
+            URL: class {
+                constructor(private str, private origin) {}
+                get href(): string { return [this.str].join("/"); }
+            },
+            nodeRequire: typeof require !== undefined && ((url: string) => { 
+                var configFile = process.argv[1].replace(/\\/gi, "/");
+                var configPath = configFile.replace(/\/[^\/]+$/gi, ""); 
+                return require(`${configPath}/${url}`); 
+            })
+        });
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
@@ -79,7 +89,10 @@
         var module = modules[url];
         module = modules[url] = {};
 
-        return new Promise((resolve) => { resolve(); });
+        return new Promise((resolve) => {
+            var mod = nodejs.nodeRequire(`${url}`);
+            current && current({ baseUrl: url, resolve: (m) => resolve(module.value = m) });
+        });
     }
 
 	function define(uris: string[], callback: Function) {

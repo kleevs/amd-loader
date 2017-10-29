@@ -2,13 +2,23 @@
     var context = typeof window !== 'undefined' && window ? window : {};
     var define = context.define;
     if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require, exports, { document: {}, href: "" /*__filename*/, origin: "/", URL: class {
+        var v = factory(require, exports, {
+            document: {},
+            href: "" /*__filename*/,
+            origin: "/",
+            URL: class {
                 constructor(str, origin) {
                     this.str = str;
                     this.origin = origin;
                 }
-                get href() { return [this.str, this.origin].join("/"); }
-            } });
+                get href() { return [this.str].join("/"); }
+            },
+            nodeRequire: typeof require !== undefined && ((url) => {
+                var configFile = process.argv[1].replace(/\\/gi, "/");
+                var configPath = configFile.replace(/\/[^\/]+$/gi, "");
+                return require(`${configPath}/${url}`);
+            })
+        });
         if (v !== undefined)
             module.exports = v;
     }
@@ -73,7 +83,10 @@
     function downloadNodeJs(url) {
         var module = modules[url];
         module = modules[url] = {};
-        return new Promise((resolve) => { resolve(); });
+        return new Promise((resolve) => {
+            var mod = nodejs.nodeRequire(`${url}`);
+            current && current({ baseUrl: url, resolve: (m) => resolve(module.value = m) });
+        });
     }
     function define(uris, callback) {
         if (arguments.length >= 3) {
