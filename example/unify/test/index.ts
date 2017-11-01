@@ -1,3 +1,3 @@
 import { untest } from './un';
-export let varr=2;
+export let varr= untest();
 console.log("blabla");

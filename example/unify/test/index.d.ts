@@ -1,1 +1,1 @@
-export declare let varr: number;
+export declare let varr: void;

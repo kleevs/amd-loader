@@ -4,12 +4,13 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports"], factory);
+        define(["require", "exports", "./un"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.varr = 2;
+    const un_1 = require("./un");
+    exports.varr = un_1.untest();
     console.log("blabla");
 });
 //# sourceMappingURL=index.js.map

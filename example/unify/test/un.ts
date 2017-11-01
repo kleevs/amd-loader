@@ -1,2 +1,6 @@
 import { objtestdeux } from './deux';
-export function untest() {}
+import { sub } from './sub/un';
+
+export function untest() {
+	console.log("test " + objtestdeux + " " + sub());
+}

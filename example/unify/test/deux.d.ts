@@ -1,1 +1,3 @@
-export declare let objtestdeux: {};
+export declare let objtestdeux: {
+    test: string;
+};

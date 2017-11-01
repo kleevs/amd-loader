@@ -1,1 +1,3 @@
-export let objtestdeux = {};
+import { sub } from './sub/un';
+
+export let objtestdeux = { test: sub() };

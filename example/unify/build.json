@@ -1,0 +1,5 @@
+{
+	"name": "AMD",
+	"main": "../example/unify/test/index",
+	"out": "dist/amd-loader.js"
+}
