@@ -1,7 +1,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "code",
     "experimentalDecorators": true,
     "sourceMap": false,
     "declaration": true,
@@ -15,14 +14,12 @@
     "lib": [
       "es2016",
       "dom"
-    ],
-    "outDir": "src"
+    ]
   },
   "include" : [ 
-    "./code/**/*.ts"
+    "./**/*.ts"
   ],
   "exclude" : [
-    "./node_modules",
-    "./src"
+    "./node_modules"
   ]
 }

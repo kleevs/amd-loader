@@ -4,15 +4,14 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "resolver.web"], factory);
+        define(["require", "exports", "../src/build"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const resolver_web_1 = require("resolver.web");
-    let resolver = new resolver_web_1.WebResolver();
-    function load(uri) {
-        resolver.resolve(uri);
-    }
-    exports.load = load;
+    const build_1 = require("../src/build");
+    build_1.load("./modules/index").then((value) => {
+        console.log(value);
+        console.log(value.dependencies);
+    });
 });
