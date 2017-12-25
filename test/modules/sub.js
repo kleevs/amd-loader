@@ -4,12 +4,15 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "./sub/un"], factory);
+        define(["require", "exports", "./base/base"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const un_1 = require("./sub/un");
-    exports.objtestdeux = { test: un_1.sub() };
+    const base_1 = require("./base/base");
+    function sub() {
+        console.log("sub");
+        base_1.base();
+    }
+    exports.sub = sub;
 });
-//# sourceMappingURL=deux.js.map

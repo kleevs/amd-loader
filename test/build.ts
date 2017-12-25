@@ -1,6 +1,8 @@
-import { load } from "../src/build";
+import { build } from "../src/build";
 
-load("./modules/index").then((value) => {
-    console.log(value);
-    console.log(value.dependencies);
+declare let require;
+var fs = require('fs');
+
+build("./modules/index").then((value) => {
+    fs.writeFileSync("dist.js", value);
 });

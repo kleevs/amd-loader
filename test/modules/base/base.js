@@ -9,7 +9,8 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function sub() { return "sub"; }
-    exports.sub = sub;
+    function base() {
+        console.log("base");
+    }
+    exports.base = base;
 });
-//# sourceMappingURL=un.js.map

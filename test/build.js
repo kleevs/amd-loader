@@ -10,8 +10,8 @@
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const build_1 = require("../src/build");
-    build_1.load("./modules/index").then((value) => {
-        console.log(value);
-        console.log(value.dependencies);
+    var fs = require('fs');
+    build_1.build("./modules/index").then((value) => {
+        fs.writeFileSync("dist.js", value);
     });
 });

@@ -1,4 +1,4 @@
-import { Test } from 'test';
+import { Test } from './test';
 import { Test as Tool } from './tools/test';
 
 var tmp = new Test();

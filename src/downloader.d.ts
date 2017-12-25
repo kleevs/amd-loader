@@ -1,13 +1,16 @@
-export declare abstract class Resolver {
+export declare abstract class Downloader {
+    private config;
     protected readonly last: any;
-    private paths;
-    private ignores;
+    private resolver;
     private modules;
     private current;
+    constructor(config?: {});
+    private normalizePath(path, uri);
     private register(url);
     protected define(uris: string[], callback: Function): void;
     resolve(uri: string): Promise<{
         module: Function;
+        dependencies: any[];
     }>;
     protected abstract download(url: string): Promise<Function>;
 }

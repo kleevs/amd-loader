@@ -16,4 +16,3 @@
     }
     exports.Test = Test;
 });
-//# sourceMappingURL=test.js.map

@@ -1,1 +1,1 @@
-export declare function load(uri: string): void;
+export declare function config(config: any): void;
