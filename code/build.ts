@@ -3,7 +3,6 @@ import { Resolver } from "./resolver";
 import { map } from "./mixin";
 
 declare let define;
-let resolver = new NodeDownloader();
 
 function template(factory, root) {
     if (typeof module === "object" && typeof module.exports === "object") {
@@ -32,15 +31,16 @@ function extract(module) {
     return modules;
 }
 
-export function build(uri: string) : Promise<string> { 
+export function build(uri: string, config: { name?: string, paths?: any, ignores?: any}) : Promise<string> { 
+    let resolver = new NodeDownloader(config && config.paths || {}, config && config.ignores || {});
     return resolver.resolve(uri).then((value) => {
         var modules = extract(value);
         var factory = new Function("req", `${[
             Resolver.toString(),
-            `var resolver = new Resolver();`,
+            `var resolver = new Resolver(${config && config.paths && JSON.stringify(config.paths) || "{}"});`,
             `var names = [${map(modules, (m) => `"${m.uri}"`)}]`,
             `var res = [${Array.apply(null, Array(modules.length)).map(() => "{}").join(",")}];`,
-            `var require = function(currentPath, name) { name = resolver.resolve(currentPath, name); return names.indexOf(name) >= 0 && res[names.indexOf(name)] || req(name); }`
+            `var require = function(currentPath, name) { var n = resolver.resolve(currentPath, name); return names.indexOf(n) >= 0 && res[names.indexOf(n)] || req(name); }`
         ].concat(map(modules, (m, idx) => {
             return m.dependencies && `${modules.length-1 === idx && "return " || ""}res[${idx}] = (${modules[idx].module.toString()})(${map(m.dependencies, (d, indexd) => {
                 var i = modules.indexOf(d);
@@ -58,7 +58,9 @@ export function build(uri: string) : Promise<string> {
 
         return `(${template.toString()})(${[
             factory.toString(),
-            "typeof window !== 'undefined' && window || {}"
+            `typeof window !== 'undefined' && (window${
+                config && config && config.name && ("." + config.name + " = {}") || "" 
+            }) || {}`
         ].join(", ")})`
     });
 }

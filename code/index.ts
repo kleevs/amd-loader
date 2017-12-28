@@ -1,4 +1,4 @@
-import { WebDownloader } from "downloader.web";
+import { WebDownloader } from "./downloader.web";
 
 let resolver = new WebDownloader();
 export function config(config) { 

@@ -12,7 +12,6 @@
     const downloader_node_1 = require("./downloader.node");
     const resolver_1 = require("./resolver");
     const mixin_1 = require("./mixin");
-    let resolver = new downloader_node_1.NodeDownloader();
     function template(factory, root) {
         if (typeof module === "object" && typeof module.exports === "object") {
             var v = factory(require);
@@ -39,15 +38,16 @@
         module && module.module && modules.indexOf(module) < 0 && modules.push(module);
         return modules;
     }
-    function build(uri) {
+    function build(uri, config) {
+        let resolver = new downloader_node_1.NodeDownloader(config && config.paths || {}, config && config.ignores || {});
         return resolver.resolve(uri).then((value) => {
             var modules = extract(value);
             var factory = new Function("req", `${[
                 resolver_1.Resolver.toString(),
-                `var resolver = new Resolver();`,
+                `var resolver = new Resolver(${config && config.paths && JSON.stringify(config.paths) || "{}"});`,
                 `var names = [${mixin_1.map(modules, (m) => `"${m.uri}"`)}]`,
                 `var res = [${Array.apply(null, Array(modules.length)).map(() => "{}").join(",")}];`,
-                `var require = function(currentPath, name) { name = resolver.resolve(currentPath, name); return names.indexOf(name) >= 0 && res[names.indexOf(name)] || req(name); }`
+                `var require = function(currentPath, name) { var n = resolver.resolve(currentPath, name); return names.indexOf(n) >= 0 && res[names.indexOf(n)] || req(name); }`
             ].concat(mixin_1.map(modules, (m, idx) => {
                 return m.dependencies && `${modules.length - 1 === idx && "return " || ""}res[${idx}] = (${modules[idx].module.toString()})(${mixin_1.map(m.dependencies, (d, indexd) => {
                     var i = modules.indexOf(d);
@@ -66,7 +66,7 @@
             })).join("\r\n")}`);
             return `(${template.toString()})(${[
                 factory.toString(),
-                "typeof window !== 'undefined' && window || {}"
+                `typeof window !== 'undefined' && (window${config && config && config.name && ("." + config.name + " = {}") || ""}) || {}`
             ].join(", ")})`;
         });
     }

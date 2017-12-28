@@ -8,7 +8,7 @@ export abstract class Downloader {
 	private current: any;
 	
 	public constructor(private config = {}) {
-		this.resolver = new Resolver();
+		this.resolver = new Resolver(config);
 	}
 
 	private normalizePath (path: string, uri: string) {
@@ -52,7 +52,6 @@ export abstract class Downloader {
 			var baseUrl = data.baseUrl,
                 setModule = data.setModule,
                 exports = {};
-				//req = (uri) => require(this.normalizePath(baseUrl, uri));
 				
 			Promise.all(map(uris, (uri) => {
 				return uri === "exports" && exports ||

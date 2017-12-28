@@ -39,8 +39,8 @@ class Resolver {
         }
     }
 var resolver = new Resolver({});
-var names = ["src/mixin","src/resolver","src/downloader","src/downloader.web","src/index"]
-var res = [{},{},{},{},{}];
+var names = ["src/mixin","src/resolver","src/downloader","src/downloader.node","src/build","src/bin"]
+var res = [{},{},{},{},{},{}];
 var require = function(currentPath, name) { var n = resolver.resolve(currentPath, name); return names.indexOf(n) >= 0 && res[names.indexOf(n)] || req(name); }
 res[0] = (function (require, exports) {
     "use strict";
@@ -154,48 +154,127 @@ res[3] = (function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const downloader_1 = require("./downloader");
-    const mixin_1 = require("./mixin");
-    class WebDownloader extends downloader_1.Downloader {
+    class NodeDownloader extends downloader_1.Downloader {
+        constructor(paths = {}, ignores = {}) {
+            super(paths);
+            this.ignores = ignores;
+        }
         download(url) {
             var me = this;
-            window.define = function () { return me.define.apply(me, arguments); };
-            window.define.amd = true;
-            var script = document.createElement('script');
-            script.async = true;
-            script.src = `${url}.js`;
-            document.head.appendChild(script);
-            return new Promise(resolve => {
-                script.onload = script.onreadystatechange = () => {
-                    var last = this.last;
-                    resolve((arg) => {
-                        var setModule = arg.setModule;
-                        arg.setModule = (m) => {
-                            m.value = m.value || m.module.apply(null, mixin_1.map(m.dependencies, (d) => {
-                                return d.value || d === "require" && ((uri) => m.dependencies[m.uris.indexOf(uri)].value) || d;
-                            })) || m.dependencies[m.uris.indexOf("exports")];
-                            return setModule(m);
-                        };
-                        var res = last(arg);
-                        return res;
-                    });
+            var fs = require('fs');
+            var fileContent = fs.readFileSync(`${url}.js`).toString();
+            var define = function () { me.define.apply(me, arguments); };
+            define.amd = true;
+            var last;
+            if (!this.ignores || !this.ignores[url]) {
+                try {
+                    (new Function("define", fileContent))(define);
+                }
+                catch (e) {
+                    console.error(`Error in file ${url}.`);
+                    throw e;
+                }
+                last = this.last;
+            }
+            else {
+                last = (data) => {
+                    data.setModule && data.setModule({ uri: data.url, module: new Function(`return ${this.ignores[url]};`), dependencies: [], uris: [] });
                 };
+            }
+            return new Promise(resolve => {
+                resolve((arg) => {
+                    last(arg);
+                });
             });
         }
     }
-    exports.WebDownloader = WebDownloader;
-})(require.bind(null, "src/"),res[3],res[2],res[0]) || res[3];
-return res[4] = (function (require, exports) {
+    exports.NodeDownloader = NodeDownloader;
+})(require.bind(null, "src/"),res[3],res[2]) || res[3];
+res[4] = (function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const downloader_web_1 = require("./downloader.web");
-    let resolver = new downloader_web_1.WebDownloader();
-    function config(config) {
-        resolver = new downloader_web_1.WebDownloader(config);
+    const downloader_node_1 = require("./downloader.node");
+    const resolver_1 = require("./resolver");
+    const mixin_1 = require("./mixin");
+    function template(factory, root) {
+        if (typeof module === "object" && typeof module.exports === "object") {
+            var v = factory(require);
+            if (v !== undefined)
+                module.exports = v;
+        }
+        else if (typeof define === "function" && define.amd) {
+            define(["require"], (require) => factory(require));
+        }
+        else {
+            factory(null, root);
+        }
     }
-    exports.config = config;
-    function load(uri) {
-        resolver.resolve(uri);
+    function unique(array) {
+        var res = [];
+        array.forEach(m => res.indexOf(m) < 0 ? res.push(m) : "");
+        return res;
     }
-    window.require = load;
-})(require.bind(null, "src/"),res[4],res[3]) || res[4];
+    function extract(module) {
+        var modules = [];
+        module && module.dependencies && module.dependencies.forEach((m) => {
+            modules = unique(modules.concat(extract(m)));
+        });
+        module && module.module && modules.indexOf(module) < 0 && modules.push(module);
+        return modules;
+    }
+    function build(uri, config) {
+        let resolver = new downloader_node_1.NodeDownloader(config && config.paths || {}, config && config.ignores || {});
+        return resolver.resolve(uri).then((value) => {
+            var modules = extract(value);
+            var factory = new Function("req", `${[
+                resolver_1.Resolver.toString(),
+                `var resolver = new Resolver(${config && config.paths && JSON.stringify(config.paths) || "{}"});`,
+                `var names = [${mixin_1.map(modules, (m) => `"${m.uri}"`)}]`,
+                `var res = [${Array.apply(null, Array(modules.length)).map(() => "{}").join(",")}];`,
+                `var require = function(currentPath, name) { var n = resolver.resolve(currentPath, name); return names.indexOf(n) >= 0 && res[names.indexOf(n)] || req(name); }`
+            ].concat(mixin_1.map(modules, (m, idx) => {
+                return m.dependencies && `${modules.length - 1 === idx && "return " || ""}res[${idx}] = (${modules[idx].module.toString()})(${mixin_1.map(m.dependencies, (d, indexd) => {
+                    var i = modules.indexOf(d);
+                    if (i >= 0) {
+                        return `res[${i}]`;
+                    }
+                    else if (m.uris[indexd] == "require") {
+                        var tmp = m.uri.split("/");
+                        tmp[tmp.length - 1] = "";
+                        return `require.bind(null, "${tmp.join("/")}")`;
+                    }
+                    else if (m.uris[indexd] == "exports") {
+                        return `res[${idx}]`;
+                    }
+                })}) || res[${idx}];`;
+            })).join("\r\n")}`);
+            return `(${template.toString()})(${[
+                factory.toString(),
+                `typeof window !== 'undefined' && (window${config && config && config.name && ("." + config.name + " = {}") || ""}) || {}`
+            ].join(", ")})`;
+        });
+    }
+    exports.build = build;
+})(require.bind(null, "src/"),res[4],res[3],res[1],res[0]) || res[4];
+return res[5] = (function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    const build_1 = require("./build");
+    var fs = require('fs');
+    var path = require('path');
+    var fileName = path.join(process.cwd(), process.argv[2] || "build.json");
+    fs.readFile(fileName, function (err, data) {
+        if (!err) {
+            var config = JSON.parse(data);
+            Promise.all(config.map((conf) => new Promise(resolve => {
+                build_1.build(conf.main, conf.option).then(function (value) {
+                    fs.writeFileSync(conf.out, value);
+                    resolve();
+                });
+            }))).then(() => {
+                process.exit();
+            });
+        }
+    });
+})(require.bind(null, "src/"),res[5],res[4]) || res[5];
 }, typeof window !== 'undefined' && (window) || {})

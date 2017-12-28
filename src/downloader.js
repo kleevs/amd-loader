@@ -15,7 +15,7 @@
         constructor(config = {}) {
             this.config = config;
             this.modules = {};
-            this.resolver = new resolver_1.Resolver();
+            this.resolver = new resolver_1.Resolver(config);
         }
         get last() { return this.current; }
         normalizePath(path, uri) {
@@ -52,7 +52,6 @@
                 this.current = resolve;
             }).then((data) => {
                 var baseUrl = data.baseUrl, setModule = data.setModule, exports = {};
-                //req = (uri) => require(this.normalizePath(baseUrl, uri));
                 Promise.all(mixin_1.map(uris, (uri) => {
                     return uri === "exports" && exports ||
                         uri === "require" && "require" ||

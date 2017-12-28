@@ -5,11 +5,7 @@
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "clean": "rm -r ./dist/*",
-    "compile": "tsc",
-    "dist": "cp -r ./src/index.js ./dist/amd-loader.js",
-    "build": "npm run clean & npm run compile & npm run dist"
+    "build": "tsc && node src/bin.js build.json"
   },
   "dependencies": {
   },

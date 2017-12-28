@@ -4,12 +4,12 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "downloader.web"], factory);
+        define(["require", "exports", "./downloader.web"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    const downloader_web_1 = require("downloader.web");
+    const downloader_web_1 = require("./downloader.web");
     let resolver = new downloader_web_1.WebDownloader();
     function config(config) {
         resolver = new downloader_web_1.WebDownloader(config);

@@ -6,6 +6,7 @@
 tsconfig.json
 src/*.ts
 src/*.map
+code
 example
 example/*
 !src/*.d.ts
