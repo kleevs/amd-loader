@@ -121,9 +121,11 @@ res[2] = (function (require, exports) {
         define(uris, callback) {
             if (arguments.length >= 3) {
                 uris = arguments[1];
+                callback = arguments[2];
             }
             else if (arguments.length <= 1) {
                 uris = [];
+                callback = arguments[0];
             }
             new Promise((resolve, reject) => {
                 this.current = resolve;

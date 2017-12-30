@@ -41,9 +41,11 @@ export abstract class Downloader {
 
 	protected define(uris: string[], callback: Function) {
         if (arguments.length >= 3) {
-            uris = arguments[1];
+			uris = arguments[1];
+			callback = arguments[2];
         } else if (arguments.length <= 1) {
-            uris = [];
+			uris = [];
+			callback = arguments[0];
         }
 
         new Promise((resolve, reject) => {
