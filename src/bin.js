@@ -18,7 +18,11 @@
             var config = JSON.parse(data);
             Promise.all(config.map((conf) => new Promise(resolve => {
                 build_1.build(conf.main, conf.option).then(function (value) {
-                    fs.writeFileSync(conf.out, value);
+                    var tmp = conf.out.replace(/\\/g, "/").split("/");
+                    tmp[tmp.length - 1] = "";
+                    var relative = path.relative(tmp.join("/"), conf.main).replace(/\\/g, "/");
+                    fs.writeFileSync(`${conf.out}.js`, value);
+                    conf.declaration && fs.writeFileSync(`${conf.out}.d.ts`, `export * from '${relative}';`);
                     resolve();
                 });
             }))).then(() => {

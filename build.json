@@ -1,10 +1,10 @@
 [{
   "main": "src/bin",
-  "out": "bin/build.js" 
+  "out": "bin/build" 
 }, {
   "main": "src/build",
-  "out": "dist/build.js" 
+  "out": "dist/build" 
 }, {
   "main": "src/index",
-  "out": "dist/amd-loader.js" 
+  "out": "dist/amd-loader" 
 }]
