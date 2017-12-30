@@ -156,6 +156,9 @@ res[3] = (function (require, exports) {
     const downloader_1 = require("./downloader");
     const mixin_1 = require("./mixin");
     class WebDownloader extends downloader_1.Downloader {
+        constructor(conf) {
+            super(conf.paths || {});
+        }
         download(url) {
             var me = this;
             window.define = function () { return me.define.apply(me, arguments); };
@@ -188,7 +191,7 @@ return res[4] = (function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     const downloader_web_1 = require("./downloader.web");
-    let resolver = new downloader_web_1.WebDownloader();
+    let resolver = new downloader_web_1.WebDownloader({});
     function config(config) {
         resolver = new downloader_web_1.WebDownloader(config);
     }
@@ -197,5 +200,6 @@ return res[4] = (function (require, exports) {
         resolver.resolve(uri);
     }
     window.require = load;
+    window.require.config = config;
 })(require.bind(null, "src/"),res[4],res[3]) || res[4];
 }, typeof window !== 'undefined' && (window) || {})

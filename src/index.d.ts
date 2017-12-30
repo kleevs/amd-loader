@@ -1,1 +1,3 @@
-export declare function config(config: any): void;
+export declare function config(config: {
+    paths?: any;
+}): void;

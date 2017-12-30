@@ -2,6 +2,10 @@ import { Downloader } from "./downloader";
 import { map } from "./mixin";
 
 export class WebDownloader extends Downloader {
+	public constructor(conf: {paths?: {}}) {
+		super(conf.paths || {});
+	}
+
     protected download(url: string): Promise<Function> {
 		var me = this;
 		(<any>window).define = function() { return me.define.apply(me, arguments); };

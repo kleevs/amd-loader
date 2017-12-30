@@ -12,6 +12,9 @@
     const downloader_1 = require("./downloader");
     const mixin_1 = require("./mixin");
     class WebDownloader extends downloader_1.Downloader {
+        constructor(conf) {
+            super(conf.paths || {});
+        }
         download(url) {
             var me = this;
             window.define = function () { return me.define.apply(me, arguments); };
