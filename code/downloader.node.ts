@@ -5,6 +5,8 @@ export class NodeDownloader extends Downloader {
 		super(paths);
 	}
 
+	public global = {};
+
     protected download(url: string): Promise<Function> {
 		var me = this;
 		var fs = require('fs');
@@ -14,7 +16,11 @@ export class NodeDownloader extends Downloader {
 		var last;
 		if (!this.ignores || !this.ignores[url]) {
 			try {
-				(new Function("define", fileContent))(define);
+				var code = [
+					"__decorate",
+					"__metadata"
+				].map(name => ` ___.${name} = typeof ${name} !== 'undefined' && ${name} || ___.${name};`).join("\r\n");
+				(new Function("define", "___", `${fileContent}\r\n${code}`))(define, this.global);
 			} catch (e) {
 				console.error(`Error in file ${url}.`);
 				throw e;

@@ -1,3 +1,4 @@
+
 (function template(factory, root) {
         if (typeof module === "object" && typeof module.exports === "object") {
             var v = factory(require);

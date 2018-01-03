@@ -1,3 +1,4 @@
+
 (function template(factory, root) {
         if (typeof module === "object" && typeof module.exports === "object") {
             var v = factory(require);
@@ -160,6 +161,7 @@ res[3] = (function (require, exports) {
         constructor(paths = {}, ignores = {}) {
             super(paths);
             this.ignores = ignores;
+            this.global = {};
         }
         download(url) {
             var me = this;
@@ -170,7 +172,11 @@ res[3] = (function (require, exports) {
             var last;
             if (!this.ignores || !this.ignores[url]) {
                 try {
-                    (new Function("define", fileContent))(define);
+                    var code = [
+                        "__decorate",
+                        "__metadata"
+                    ].map(name => ` ___.${name} = typeof ${name} !== 'undefined' && ${name} || ___.${name};`).join("\r\n");
+                    (new Function("define", "___", `${fileContent}\r\n${code}`))(define, this.global);
                 }
                 catch (e) {
                     console.error(`Error in file ${url}.`);
@@ -250,7 +256,8 @@ res[4] = (function (require, exports) {
                     }
                 })}) || res[${idx}];`;
             })).join("\r\n")}`);
-            return `(${template.toString()})(${[
+            return `${Object.keys(resolver.global).map(key => resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
+                .join("\r\n")}(${template.toString()})(${[
                 factory.toString(),
                 `typeof window !== 'undefined' && (window${config && config && config.name && ("." + config.name + " = {}") || ""}) || {}`
             ].join(", ")})`;

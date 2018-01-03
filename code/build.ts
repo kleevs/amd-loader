@@ -2,7 +2,7 @@ import { NodeDownloader } from "./downloader.node";
 import { Resolver } from "./resolver";
 import { map } from "./mixin";
 
-declare let define;
+declare let define, __decorate, __metadata;
 
 function template(factory, root) {
     if (typeof module === "object" && typeof module.exports === "object") {
@@ -31,7 +31,7 @@ function extract(module) {
     return modules;
 }
 
-export function build(uri: string, config: { name?: string, paths?: any, ignores?: any}) : Promise<string> { 
+export function build(uri: string, config: { name?: string, paths?: any, ignores?: any}) : Promise<string> {
     let resolver = new NodeDownloader(config && config.paths || {}, config && config.ignores || {});
     return resolver.resolve(uri).then((value) => {
         var modules = extract(value);
@@ -56,7 +56,9 @@ export function build(uri: string, config: { name?: string, paths?: any, ignores
             })}) || res[${idx}];`;
         })).join("\r\n")}`);
 
-        return `(${template.toString()})(${[
+        return `${Object.keys(resolver.global).map(key => 
+            resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
+                .join("\r\n")}(${template.toString()})(${[
             factory.toString(),
             `typeof window !== 'undefined' && (window${
                 config && config && config.name && ("." + config.name + " = {}") || "" 
