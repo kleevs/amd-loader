@@ -200,7 +200,7 @@ return res[4] = (function (require, exports) {
     }
     exports.config = config;
     function load(uri) {
-        resolver.resolve(uri);
+        return resolver.resolve(uri).then(module => module.value);
     }
     window.require = load;
     window.require.config = config;
