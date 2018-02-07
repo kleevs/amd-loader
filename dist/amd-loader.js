@@ -166,6 +166,7 @@ res[3] = (function (require, exports) {
             var me = this;
             window.define = function () { return me.define.apply(me, arguments); };
             window.define.amd = true;
+            url = url.indexOf("/") !== 0 && `/${url}` || url;
             var script = document.createElement('script');
             script.async = true;
             script.src = `${url}.js`;

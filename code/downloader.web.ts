@@ -10,6 +10,7 @@ export class WebDownloader extends Downloader {
 		var me = this;
 		(<any>window).define = function() { return me.define.apply(me, arguments); };
 		(<any>window).define.amd = true;
+		url = url.indexOf("/") !== 0 && `/${url}` || url;
 		var script = document.createElement('script');
 		script.async = true;
 		script.src = `${url}.js`;
