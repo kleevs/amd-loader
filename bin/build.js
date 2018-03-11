@@ -259,7 +259,7 @@ res[4] = (function (require, exports) {
             return `${Object.keys(resolver.global).map(key => resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
                 .join("\r\n")}(${template.toString()})(${[
                 factory.toString(),
-                `typeof window !== 'undefined' && (window${config && config && config.name && ("." + config.name + " = {}") || ""}) || {}`
+                `typeof window !== 'undefined' && window${config && config && config.name && ("." + config.name) || ""} || (window${config && config && config.name && ("." + config.name) || ""} = {}) || {}`
             ].join(", ")})`;
         });
     }
@@ -290,4 +290,4 @@ return res[5] = (function (require, exports) {
         }
     });
 })(require.bind(null, "src/"),res[5],res[4]) || res[5];
-}, typeof window !== 'undefined' && (window) || {})
+}, typeof window !== 'undefined' && window || (window = {}) || {})

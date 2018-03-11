@@ -60,9 +60,11 @@ export function build(uri: string, config: { name?: string, paths?: any, ignores
             resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
                 .join("\r\n")}(${template.toString()})(${[
             factory.toString(),
-            `typeof window !== 'undefined' && (window${
-                config && config && config.name && ("." + config.name + " = {}") || "" 
-            }) || {}`
+            `typeof window !== 'undefined' && window${
+                config && config && config.name && ("." + config.name) || ""
+            } || (window${
+                config && config && config.name && ("." + config.name) || "" 
+            } = {}) || {}`
         ].join(", ")})`
     });
 }

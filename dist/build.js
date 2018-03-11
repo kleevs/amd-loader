@@ -259,10 +259,10 @@ return res[4] = (function (require, exports) {
             return `${Object.keys(resolver.global).map(key => resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
                 .join("\r\n")}(${template.toString()})(${[
                 factory.toString(),
-                `typeof window !== 'undefined' && (window${config && config && config.name && ("." + config.name + " = {}") || ""}) || {}`
+                `typeof window !== 'undefined' && window${config && config && config.name && ("." + config.name) || ""} || (window${config && config && config.name && ("." + config.name) || ""} = {}) || {}`
             ].join(", ")})`;
         });
     }
     exports.build = build;
 })(require.bind(null, "src/"),res[4],res[3],res[1],res[0]) || res[4];
-}, typeof window !== 'undefined' && (window) || {})
+}, typeof window !== 'undefined' && window || (window = {}) || {})

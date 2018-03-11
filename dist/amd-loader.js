@@ -206,4 +206,4 @@ return res[4] = (function (require, exports) {
     window.require = load;
     window.require.config = config;
 })(require.bind(null, "src/"),res[4],res[3]) || res[4];
-}, typeof window !== 'undefined' && (window) || {})
+}, typeof window !== 'undefined' && window || (window = {}) || {})
