@@ -1,0 +1,15 @@
+{ 
+    "routes": [{
+        "match": "/?node_modules\\/(.*)",
+        "rewrite": "./node_modules/$1"
+    }, {
+        "match": "/?src\\/(.*)",
+        "rewrite": "./src/$1"
+    }, {
+        "match": "(.*\\.[a-z]+)",
+        "rewrite": "./example/simple$1"
+    }, {
+        "match": "^(.*)$",
+        "rewrite": "./example/simple/"
+    }]
+}

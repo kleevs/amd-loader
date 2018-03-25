@@ -1,17 +1,21 @@
 {
   "name": "amd-loader",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A simple amd loader",
   "main": "./src/index.js",
   "typings": "./src/index.d.ts",
   "scripts": {
-    "build": "tsc && node src/bin.js build.json"
+    "tsc": "node_modules/.bin/tsc",
+    "start": "node node_modules/server/.bin/server.js config.json",
+    "build": "npm run tsc && cp ./src/index.js ./dist/amd-loader.js && cp ./src/build.js ./bin/amd-loader.js",
+	"test": "node bin/amd-loader"
   },
   "dependencies": {
   },
   "devDependencies": {    
     "@types/node": "^7.0.14",
-    "bootstrap": "^3.3.7"
+    "bootstrap": "^3.3.7",
+    "server": "git+https://github.com/kleevs/server.git"
   },
   "repository": {
     "type": "git",
