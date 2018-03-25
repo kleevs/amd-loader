@@ -1,70 +1,88 @@
-import { NodeDownloader } from "./downloader.node";
-import { Resolver } from "./resolver";
-import { map } from "./mixin";
+var fs = require('fs');
+var path = require('path');
 
-declare let define, __decorate, __metadata;
+declare type Module = { id: string; content: string, dependencies: Module[] };
 
-function template(factory, root) {
-    if (typeof module === "object" && typeof module.exports === "object") {
-        var v = factory(require);
-        if (v !== undefined) module.exports = v;
+class Compiler {
+    private options;
+    constructor(options?) {
+        var fileName = path.join(process.cwd(), "build.js");
+        this.options = options || require(fileName);
     }
-    else if (typeof define === "function" && define.amd) {
-        define(["require"], (require) => factory(require));
-    } else {
-        factory(null, root);
-    }
-}
 
-function unique(array: any[]): any[] {
-    var res = [];
-    array.forEach(m => res.indexOf(m) < 0 ? res.push(m) : "");
-    return res;
-}
+    apply(loaders: Loader[]) {
+        var options = this.options || {};
+        var config = options && options.config || {};
 
-function extract(module) {
-    var modules = [];
-    module && module.dependencies && module.dependencies.forEach((m) => {
-        modules = unique(modules.concat(extract(m)));
-    });
-    module && module.module && modules.indexOf(module) < 0 && modules.push(module);
-    return modules;
-}
-
-export function build(uri: string, config: { name?: string, paths?: any, ignores?: any}) : Promise<string> {
-    let resolver = new NodeDownloader(config && config.paths || {}, config && config.ignores || {});
-    return resolver.resolve(uri).then((value) => {
-        var modules = extract(value);
-        var factory = new Function("req", `${[
-            Resolver.toString(),
-            `var resolver = new Resolver(${config && config.paths && JSON.stringify(config.paths) || "{}"});`,
-            `var names = [${map(modules, (m) => `"${m.uri}"`)}]`,
-            `var res = [${Array.apply(null, Array(modules.length)).map(() => "{}").join(",")}];`,
-            `var require = function(currentPath, name) { var n = resolver.resolve(currentPath, name); return names.indexOf(n) >= 0 && res[names.indexOf(n)] || req(name); }`
-        ].concat(map(modules, (m, idx) => {
-            return m.dependencies && `${modules.length-1 === idx && "return " || ""}res[${idx}] = (${modules[idx].module.toString()})(${map(m.dependencies, (d, indexd) => {
-                var i = modules.indexOf(d);
-                if (i >= 0) {
-                    return `res[${i}]`;
-                } else if (m.uris[indexd] == "require") {
-                    var tmp = m.uri.split("/");
-					tmp[tmp.length-1] = "";
-                    return `require.bind(null, "${tmp.join("/")}")`;
-                } else if (m.uris[indexd] == "exports") {
-                    return `res[${idx}]`;
+        var getAbsoluteUri = (uri, context?) => {
+            var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+            if (config && config.path) { 
+                config.path.forEach(path => {
+                    if (href.match(path.test)) {
+                        return href.replace(path.test, path.result);
+                    }
+                });
+            }
+            
+            return href.replace(/^(.*)$/, '$1.js');
+        }
+        
+        function load(uri): Module {
+            console.log(uri);
+            if (!options.ignores || !options.ignores[uri]) {
+                try {
+                    var loader = loaders.filter(loader => loader.match(uri))[0];
+                    var fileContent = fs.readFileSync(uri).toString();
+                    var dependencies = loader && loader.getDependencies(uri, fileContent) || [];
+                    return { 
+                        id: uri,
+                        content: loader.transpiler(uri, fileContent), 
+                        dependencies: dependencies.map(dependency => load(getAbsoluteUri(dependency, uri))) 
+                    };
                 }
-            })}) || res[${idx}];`;
-        })).join("\r\n")}`);
-
-        return `${Object.keys(resolver.global).map(key => 
-            resolver.global[key] && `var ${key} = (this && this.${key}) || ${resolver.global[key].toString()};` || undefined)
-                .join("\r\n")}(${template.toString()})(${[
-            factory.toString(),
-            `typeof window !== 'undefined' && window${
-                config && config && config.name && ("." + config.name) || ""
-            } || (window${
-                config && config && config.name && ("." + config.name) || "" 
-            } = {}) || {}`
-        ].join(", ")})`
-    });
+                catch (e) {
+                    console.error(`Error in file ${uri}.`);
+                    throw e;
+                }
+            }
+            else {
+                return { id: uri, content: '', dependencies: [] };
+            }
+        }
+        
+        var bundlerify = (module: Module): { id: string; content: string }[] => {
+            var res: { id: string; content: string }[] = [];
+            module.dependencies && module.dependencies.forEach(dep => bundlerify(dep).forEach(m => res.push(m)));
+            res.push({ id: module.id, content: module.content });
+            return res;
+        }
+        
+        var main = load(options.main);
+        var result = bundlerify(main).map(m => m.content).join("\r\n");
+        fs.writeFileSync(`${options.out}`, result);
+    }
 }
+
+abstract class Loader {
+    abstract match(id: string): boolean;
+    abstract getDependencies(id: string, content: string): string[];
+    abstract transpiler(id: string, content: string): string
+}
+
+class Test extends Loader {
+    match(id: string): boolean { return true; }
+    getDependencies(id: string, content: string): string[] {
+        var res = content.match(/\bdefine\b/gi);
+        console.log(res);
+        return res;
+    }
+    transpiler(id: string, content: string): string {
+        return content;
+    }
+}
+
+module.exports = Compiler;
+module.exports = Loader;
+module.exports = Test;
+
+new Compiler().apply([new Test()]);
