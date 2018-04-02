@@ -1,5 +1,6 @@
 (function () { 
     var allmodules = { "...": {} };
+    var loadedmodules = {};
     var config;
 
     var getAbsoluteUri = (uri, context?) => {
@@ -37,18 +38,19 @@
 
         return allmodules["..."]["..."] = allmodules["..."][id] = (context?) => {
             return Promise.all(dependencies.map(function(dependency) {
-                if (dependency === "require") return undefined;
+                if (dependency === "require") return (uri) => loadedmodules[getAbsoluteUri(uri, context)];
                 if (dependency === "exports") return exp = {};
                 
                 return new Promise(resolve => {
                     var script = document.createElement('script');
+                    var src = getAbsoluteUri(dependency, context);
                     script.async = true;
-                    script.src = getAbsoluteUri(dependency, context);
+                    script.src = src;
                     document.head.appendChild(script);
                     script.onload = (<any>script).onreadystatechange = () => {
-                        allmodules[dependency] = allmodules["..."]["..."];
+                        allmodules[src] = allmodules["..."]["..."];
                         allmodules["..."] = {};
-                        allmodules[dependency] = allmodules[dependency] && allmodules[dependency](dependency).then(module => resolve(module)) || resolve();
+                        allmodules[src] = allmodules[src] && allmodules[src](dependency).then(module => resolve(loadedmodules[src] = module)) || resolve();
                     };
                 });
             })).then(function (result) {
