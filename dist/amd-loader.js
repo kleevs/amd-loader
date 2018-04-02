@@ -16,9 +16,11 @@
         return link.href.replace(/^(.*)$/, '$1.js');
     };
     var require = function (uri) {
-        var mod = define([uri], () => { });
-        allmodules["..."] = {};
-        mod();
+        return new Promise(resolve => {
+            var mod = define([uri], (module) => { resolve(module); });
+            allmodules["..."] = {};
+            mod();
+        });
     };
     var define = function (dependencies, modulefactory) {
         var exp;
@@ -38,9 +40,9 @@
                     return (uri) => loadedmodules[getAbsoluteUri(uri, context)];
                 if (dependency === "exports")
                     return exp = {};
-                return new Promise(resolve => {
+                var src = getAbsoluteUri(dependency, context);
+                return allmodules[src] || new Promise(resolve => {
                     var script = document.createElement('script');
-                    var src = getAbsoluteUri(dependency, context);
                     script.async = true;
                     script.src = src;
                     document.head.appendChild(script);
