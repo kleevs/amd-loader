@@ -6,7 +6,8 @@
         link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
         if (config && config.path) {
             config.path.forEach(path => {
-                if (link.href.match(path.test)) {
+                if (uri.match(path.test)) {
+                    link.href = uri;
                     return link.href.replace(path.test, path.result);
                 }
             });
@@ -44,7 +45,7 @@
                     script.onload = script.onreadystatechange = () => {
                         allmodules[dependency] = allmodules["..."]["..."];
                         allmodules["..."] = {};
-                        allmodules[dependency] = allmodules[dependency](dependency).then(module => resolve(module));
+                        allmodules[dependency] = allmodules[dependency] && allmodules[dependency](dependency).then(module => resolve(module)) || resolve();
                     };
                 });
             })).then(function (result) {
