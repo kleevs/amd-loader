@@ -3,16 +3,48 @@ var path = require('path');
 class Loader {
 }
 class DefaultLoader extends Loader {
-    match(id) { return true; }
-    getDependencies(id, content) {
-        var res = content && (/define\s*\([^,]*,?\s*(\[(\s*"[^"]*",?\s*)*\])/gi).exec(content) || undefined;
+    constructor() {
+        super(...arguments);
+        this.dictionary = {};
+        this.num = 0;
+        this.getAbsoluteUri = (uri, context) => {
+            var config = {};
+            var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+            if (config && config.path) {
+                config.path.forEach(path => {
+                    if (href.match(path.test)) {
+                        return href.replace(path.test, path.result);
+                    }
+                });
+            }
+            var res = href.replace(/^(.*)$/, '$1.js');
+            return path.normalize(res).replace(/\\/gi, "/");
+        };
+    }
+    getLocalDependencies(id, content) {
+        var regex = /define\s*\([^,]*,?\s*(\[(\s*"[^"]*",?\s*)*\])/gi;
+        var res = content && regex.exec(content) || undefined;
         res = res && res[1];
         res = res && new Function(`return ${res};`)();
         res = res && res.filter((s) => s !== "require" && s !== "exports");
-        return res;
+        return res || [];
+    }
+    match(id) { this.dictionary[id] = { resultname: `module${++this.num}` }; return true; }
+    getDependencies(id, content) {
+        return this.getLocalDependencies(id, content).map(dependency => this.getAbsoluteUri(dependency, id));
     }
     transpiler(id, content) {
-        return content;
+        var dependencies = this.getLocalDependencies(id, content);
+        var regex = /define\s*\([^,]*,?\s*(\[(\s*"[^"]*",?\s*)*\])/gi;
+        content = content.replace(regex, (str) => {
+            var res = str;
+            dependencies.forEach(d => {
+                var absolute = this.getAbsoluteUri(d, id);
+                res = res.replace(d, this.dictionary[absolute].resultname);
+            });
+            return res;
+        });
+        return content.replace(/define\(/, `define('${this.dictionary[id] && this.dictionary[id].resultname || id}', `);
     }
 }
 class Compiler {
@@ -48,11 +80,12 @@ class Compiler {
                 var loader = loaders.filter(loader => loader.match(uri))[0];
                 var fileContent = fs.readFileSync(uri).toString();
                 var dependencies = loader && loader.getDependencies(uri, fileContent) || [];
+                var mdependencies = dependencies.map(dependency => load(dependency));
                 return modules[uri] = {
                     id: uri,
                     written: false,
                     content: loader.transpiler(uri, fileContent),
-                    dependencies: dependencies.map(dependency => load(getAbsoluteUri(dependency, uri)))
+                    dependencies: mdependencies
                 };
             }
             else {

@@ -12,6 +12,10 @@ declare abstract class Loader {
     abstract transpiler(id: string, content: string): string;
 }
 declare class DefaultLoader extends Loader {
+    private dictionary;
+    private num;
+    private getAbsoluteUri;
+    private getLocalDependencies(id, content);
     match(id: string): boolean;
     getDependencies(id: string, content: string): string[];
     transpiler(id: string, content: string): string;
