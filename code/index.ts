@@ -63,6 +63,7 @@
     }
 
     var context: any = window;
+	(<any>define).amd = true;
     context.define = define;
     context.require = require;
     context.require.config = (options) => {

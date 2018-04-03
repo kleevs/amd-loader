@@ -59,6 +59,7 @@
         };
     };
     var context = window;
+    define.amd = true;
     context.define = define;
     context.require = require;
     context.require.config = (options) => {
