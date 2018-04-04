@@ -8,17 +8,19 @@ declare type Module = {
 };
 declare abstract class Loader {
     abstract match(id: string): boolean;
-    abstract getDependencies(id: string, content: string): string[];
-    abstract transpiler(id: string, content: string): string;
+    abstract load(id: string): {
+        content: string;
+        dependencies: string[];
+    };
 }
 declare class DefaultLoader extends Loader {
-    private dictionary;
-    private num;
     private getAbsoluteUri;
     private getLocalDependencies(id, content);
     match(id: string): boolean;
-    getDependencies(id: string, content: string): string[];
-    transpiler(id: string, content: string): string;
+    load(id: string): {
+        content: string;
+        dependencies: string[];
+    };
 }
 declare class Compiler {
     private options;
