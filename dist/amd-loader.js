@@ -4,15 +4,15 @@
     var config;
     var getAbsoluteUri = (uri, context) => {
         var link = document.createElement("a");
-        link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
         if (config && config.path) {
-            config.path.forEach(path => {
+            config.path.some(path => {
                 if (uri.match(path.test)) {
-                    link.href = uri;
-                    return link.href.replace(path.test, path.result);
+                    uri = uri.replace(path.test, path.result);
+                    return true;
                 }
             });
         }
+        link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
         return link.href.replace(/^(.*)$/, '$1.js');
     };
     var require = function (uri) {

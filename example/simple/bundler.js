@@ -1,37 +1,37 @@
-(function() {
+(function(def, req) {
 
 var define = (function() {
-	var modules = {};
-	var getUri = (uri, context) => {
-            var config = {};
-            var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-            if (config && config.path) {
-                config.path.forEach(path => {
-                    if (href.match(path.test)) {
-                        return href.replace(path.test, path.result);
-                    }
-                });
+    var paths = [];
+    var modules = {};
+    var getUri = function(uri, context?) {
+        paths.some(path => {
+            if (uri.match(path.test)) {
+                uri = uri.replace(path.test, path.result);
+                return true;
             }
-            var res = href.replace(/^(.*)$/, '$1.js');
-            return path.normalize(res).replace(/\\/gi, "/");
-        }
-	var define = function (id, dependencies, factory) {
-		modules[id] = factory(dependencies.map(function (d) { 
-			if (d !== "exports" && d !== "require") {
-				return modules[getUri(d, id)]; 
-			}
-			
-			if (d === "exports") {
-				return modules[id] = {};
-			}
-			
-			if (d === "require") {
-				return function (k) { return modules[getUri(k, id)]; };
-			}
-		})) || modules[id];
-	}
-	define.amd = true;
-	return define; 
+        });
+        var href = (uri && !uri.match(/^//) && context && context.replace(/(/?)[^/]*$/, '$1') || '') + uri;
+        var res = href.replace(/^(.*)$/, '$1.js');
+        return path.normalize(res).replace(/\/gi, "/")
+    }
+    var define = function (id, dependencies, factory) {
+        modules[id] = factory(dependencies.map(function (d) { 
+            if (d !== "exports" && d !== "require") {
+                return modules[getUri(d, id)]; 
+            }
+            
+            if (d === "exports") {
+                return modules[id] = {};
+            }
+            
+            if (d === "require") {
+                return function (k) { return modules[getUri(k, id)] || req(getUri(k, id)); };
+            }
+        })) || modules[id];
+    }
+    define.amd = true;
+	
+    return define; 
 })();
 
 define('example/simple/tools/base/base.js', ["require", "exports"], function (require, exports) {
@@ -77,4 +77,4 @@ define('example/simple/index.js', ["require", "exports", "./test", "./tools/test
     console.log("yes");
 });
 
-})()
+})(typeof define !== 'undefined' && define, typeof require !== 'undefined' && require)
