@@ -3,19 +3,21 @@
 var define = (function() {
     var paths = [];
     var modules = {};
-    var getUri = function(uri, context?) {
+    var getUri = function(uri, context) {
+		var link = document.createElement("a");
         paths.some(path => {
             if (uri.match(path.test)) {
                 uri = uri.replace(path.test, path.result);
                 return true;
             }
         });
-        var href = (uri && !uri.match(/^//) && context && context.replace(/(/?)[^/]*$/, '$1') || '') + uri;
+        var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
         var res = href.replace(/^(.*)$/, '$1.js');
-        return path.normalize(res).replace(/\/gi, "/")
+        link.href = res.replace(/\\/gi, "/");
+		return link.href;
     }
     var define = function (id, dependencies, factory) {
-        modules[id] = factory(dependencies.map(function (d) { 
+        modules[id] = factory.apply(null, dependencies.map(function (d) { 
             if (d !== "exports" && d !== "require") {
                 return modules[getUri(d, id)]; 
             }
@@ -25,7 +27,7 @@ var define = (function() {
             }
             
             if (d === "require") {
-                return function (k) { return modules[getUri(k, id)] || req(getUri(k, id)); };
+                return function (k) { var uri = getUri(k, id); return modules[uri]; };
             }
         })) || modules[id];
     }
