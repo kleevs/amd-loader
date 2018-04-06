@@ -52,7 +52,7 @@
                     script.onload = (<any>script).onreadystatechange = () => {
                         allmodules[src] = allmodules["..."]["..."];
                         allmodules["..."] = {};
-                        allmodules[src] = allmodules[src] && allmodules[src](dependency).then(module => resolve(loadedmodules[src] = module)) || resolve();
+                        allmodules[src] = allmodules[src] && allmodules[src](src).then(module => resolve(loadedmodules[src] = module)) || resolve();
                     };
                 });
             })).then(function (result) {

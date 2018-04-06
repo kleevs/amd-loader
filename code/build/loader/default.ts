@@ -83,9 +83,9 @@ var define = (function() {
             }
         });
         var href = (uri && !uri.match(/^\\//) && context && context.replace(/(\\/?)[^\\/]*$/, '$1') || '') + uri;
-        var res = href.replace(/^(.*)$/, '$1.js');
+        var res = href.replace(/^\\/?(.*)$/, '/$1.js');
         link.href = res.replace(/\\\\/gi, "/");
-		return link.href;
+		return link.pathname.replace(/^\\//, '');
     }
     var define = function (id, dependencies, factory) {
         modules[id] = factory.apply(null, dependencies.map(function (d) { 
@@ -104,7 +104,7 @@ var define = (function() {
     }
     define.amd = true;
 	${this._ignoreModules.map(m => {
-		return `define("${m.id}", [], ${m.content});`;
+		return `define("${m.id}.js", [], ${m.content});`;
 	}).join("\n")}
     return define; 
 })();
