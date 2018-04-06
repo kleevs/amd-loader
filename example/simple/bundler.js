@@ -1,41 +1,39 @@
 (function(def, req) {
-
 var define = (function() {
-    var paths = [];
-    var modules = {};
-    var getUri = function(uri, context) {
+	var paths = [];
+	var modules = {};
+	var getUri = function(uri, context) {
 		var link = document.createElement("a");
-        paths.some(path => {
-            if (uri.match(path.test)) {
-                uri = uri.replace(path.test, path.result);
-                return true;
-            }
-        });
-        var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-        var res = href.replace(/^(.*)$/, '$1.js');
-        link.href = res.replace(/\\/gi, "/");
-		return link.href;
-    }
-    var define = function (id, dependencies, factory) {
-        modules[id] = factory.apply(null, dependencies.map(function (d) { 
-            if (d !== "exports" && d !== "require") {
-                return modules[getUri(d, id)]; 
-            }
-            
-            if (d === "exports") {
-                return modules[id] = {};
-            }
-            
-            if (d === "require") {
-                return function (k) { var uri = getUri(k, id); return modules[uri]; };
-            }
-        })) || modules[id];
-    }
-    define.amd = true;
-	
-    return define; 
+		paths.some(path => {
+			if (uri.match(path.test)) {
+				uri = uri.replace(path.test, path.result);
+				return true;
+			}
+		});
+		var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+		var res = href.replace(/^\/?(.*)$/, '/$1.js');
+		link.href = res.replace(/\\/gi, "/");
+		return link.pathname.replace(/^\//, '');
+	}
+	var define = function (id, dependencies, factory) {
+		modules[id] = factory.apply(null, dependencies.map(function (d) { 
+			if (d !== "exports" && d !== "require") {
+				return modules[getUri(d, id)]; 
+			}
+			
+			if (d === "exports") {
+				return modules[id] = {};
+			}
+			
+			if (d === "require") {
+				return function (k) { var uri = getUri(k, id); return modules[uri]; };
+			}
+		})) || modules[id];
+	}
+	define.amd = true;
+	return define; 
 })();
-
+	
 define('example/simple/tools/base/base.js', ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -79,4 +77,8 @@ define('example/simple/index.js', ["require", "exports", "./test", "./tools/test
     console.log("yes");
 });
 
+
+define('export', ["example/simple/index"], function(module) { 
+	def([], function () { return module; });
+});
 })(typeof define !== 'undefined' && define, typeof require !== 'undefined' && require)

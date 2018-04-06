@@ -41,7 +41,7 @@
                 if (dependency === "exports")
                     return exp = {};
                 var src = getAbsoluteUri(dependency, context);
-                return allmodules[src] || new Promise(resolve => {
+                return allmodules[src] = allmodules[src] || new Promise(resolve => {
                     var script = document.createElement('script');
                     script.async = true;
                     script.src = src;
