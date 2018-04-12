@@ -7,10 +7,10 @@ export declare class Compiler {
     private options;
     constructor(options?: any);
     apply(config?: {
-        loader?: Loader;
-        transpiler?: Transpiler;
-        dependencer?: Dependencer;
-        bundlerify?: Bundlerify;
-        writer?: Writer;
+        loader?: typeof Loader;
+        transpiler?: typeof Transpiler;
+        dependencer?: typeof Dependencer;
+        bundlerify?: typeof Bundlerify;
+        writer?: typeof Writer;
     }): void;
 }

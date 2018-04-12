@@ -18,20 +18,20 @@ export class Compiler {
     }
 
     apply(config?: { 
-		loader?: Loader,
-		transpiler?: Transpiler,
-		dependencer?: Dependencer,
-		bundlerify?: Bundlerify,
-		writer?: Writer
+		loader?: typeof Loader,
+		transpiler?: typeof Transpiler,
+		dependencer?: typeof Dependencer,
+		bundlerify?: typeof Bundlerify,
+		writer?: typeof Writer
 	}) {
         var options = this.options || {};
 		var modules = {};
 		
-		var loader = config && config.loader || new DefaultLoader(options.config);
-		var transpiler = config && config.transpiler || new DefaultTranspiler(options.config);
-		var dependencer = config && config.dependencer || new DefaultDependencer(options.config);
-		var bundlerify = config && config.bundlerify || new DefaultBundlerify(options.config);
-		var writer = config && config.writer || new DefaultWriter(options.config);
+		var loader: Loader = new (<any>(config && config.loader || DefaultLoader))(options.config);
+		var transpiler: Transpiler = new (<any>(config && config.transpiler || DefaultTranspiler))(options.config);
+		var dependencer: Dependencer = new (<any>(config && config.dependencer || DefaultDependencer))(options.config);
+		var bundlerify: Bundlerify = new (<any>(config && config.bundlerify || DefaultBundlerify))(options.config);
+		var writer: Writer = new (<any>(config && config.writer || DefaultWriter))(options.config);
         
         function load(uri): Module {
 			uri = path.normalize(uri).replace(/\\/gi, "/");

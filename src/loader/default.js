@@ -17,7 +17,9 @@
             this._config = _config;
         }
         load(id) {
-            return this.ignore(id) || fs.readFileSync(id).toString();
+            var ignore = this.ignore(id);
+            var content = (!ignore || ignore instanceof Function) && fs.readFileSync(id).toString() || '';
+            return typeof (ignore) === "string" && ignore || (ignore && ignore instanceof Function && ignore(content)) || content;
         }
         ignore(uri) {
             var config = this._config || {};

@@ -1,40 +1,53 @@
 (function(def, req) {
-var define = (function() {
-	var paths = [];
-	var modules = {};
-	var getUri = function(uri, context) {
-		var link = document.createElement("a");
-		paths.some(path => {
-			if (uri.match(path.test)) {
-				uri = uri.replace(path.test, path.result);
-				return true;
-			}
-		});
-		var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-		var res = href.replace(/^\/?(.*)$/, '/$1.js');
-		link.href = res.replace(/\\/gi, "/");
-		return link.pathname.replace(/^\//, '');
+var __META__ = {}; 
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+		__META__.MODE = "NODE";
+    }
+    else if (typeof def === "function" && def.amd) {
+		__META__.MODE = "AMD";
+    } else {
+		__META__.MODE = "";
 	}
-	var define = function (id, dependencies, factory) {
-		modules[id] = factory.apply(null, dependencies.map(function (d) { 
-			if (d !== "exports" && d !== "require") {
-				return modules[getUri(d, id)]; 
-			}
-			
-			if (d === "exports") {
-				return modules[id] = {};
-			}
-			
-			if (d === "require") {
-				return function (k) { var uri = getUri(k, id); return modules[uri]; };
-			}
-		})) || modules[id];
-	}
-	define.amd = true;
-	return define; 
-})();
 	
-define('example/simple/tools/base/base.js', ["require", "exports"], function (require, exports) {
+	factory();
+})(function () {
+	var define = (function() {
+		var paths = [];
+		var modules = {};
+		var getUri = function(uri, context) {
+			var link = document.createElement("a");
+			paths.some(path => {
+				if (uri.match(path.test)) {
+					uri = uri.replace(path.test, path.result);
+					return true;
+				}
+			});
+			var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+			var res = href.replace(/^\/?(.*)$/, '/$1.js');
+			link.href = res.replace(/\\/gi, "/");
+			return link.pathname.replace(/^\//, '');
+		}
+		var define = function (id, dependencies, factory) {
+			modules[id] = factory.apply(null, dependencies.map(function (d) { 
+				if (d !== "exports" && d !== "require") {
+					return modules[getUri(d, id)]; 
+				}
+				
+				if (d === "exports") {
+					return modules[id] = {};
+				}
+				
+				if (d === "require") {
+					return function (k) { var uri = getUri(k, id); return modules[uri]; };
+				}
+			})) || modules[id];
+		}
+		define.amd = true;
+		return define; 
+	})();
+
+	define('example/simple/tools/base/base.js', ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     class Base {
@@ -78,7 +91,14 @@ define('example/simple/index.js', ["require", "exports", "./test", "./tools/test
 });
 
 
-define('export', ["example/simple/index"], function(module) { 
-	def([], function () { return module; });
+	define('export', ["example/simple/index"], function(m) { 
+		if (__META__.MODE === "NODE") {
+			module.exports = m;
+		} else if (__META__.MODE === "AMD") {
+			def([], function () { return m; });
+		} else {
+			window.test = m;
+		}
+	});
 });
 })(typeof define !== 'undefined' && define, typeof require !== 'undefined' && require)
