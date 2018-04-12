@@ -23,11 +23,11 @@
         apply(config) {
             var options = this.options || {};
             var modules = {};
-            var loader = config && config.loader || new default_1.DefaultLoader(options.config);
-            var transpiler = config && config.transpiler || new default_2.DefaultTranspiler(options.config);
-            var dependencer = config && config.dependencer || new default_3.DefaultDependencer(options.config);
-            var bundlerify = config && config.bundlerify || new default_4.DefaultBundlerify(options.config);
-            var writer = config && config.writer || new default_5.DefaultWriter(options.config);
+            var loader = new (config && config.loader || default_1.DefaultLoader)(options.config);
+            var transpiler = new (config && config.transpiler || default_2.DefaultTranspiler)(options.config);
+            var dependencer = new (config && config.dependencer || default_3.DefaultDependencer)(options.config);
+            var bundlerify = new (config && config.bundlerify || default_4.DefaultBundlerify)(options.config);
+            var writer = new (config && config.writer || default_5.DefaultWriter)(options.config);
             function load(uri) {
                 uri = path.normalize(uri).replace(/\\/gi, "/");
                 if (modules[uri]) {

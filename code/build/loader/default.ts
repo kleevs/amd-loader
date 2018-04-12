@@ -8,7 +8,9 @@ export class DefaultLoader extends Loader {
     }
 
 	load(id: string): string {
-		return this.ignore(id) || fs.readFileSync(id).toString();
+		var ignore = this.ignore(id);
+		var content = (!ignore || ignore instanceof Function) && fs.readFileSync(id).toString() || '';
+		return typeof(ignore) === "string" && ignore || (ignore && ignore instanceof Function && ignore(content)) || content;
 	}
 	
 	private ignore(uri) {
