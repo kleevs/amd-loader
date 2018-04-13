@@ -15,6 +15,8 @@ export class DefaultBundlerify extends Bundlerify {
 	}
 
 	bundle(main: Module): string {
+		var me = this;
+		var required = this._config && this._config.require && Object.keys(this._config.require);
 		return `(function() {
 var __META__ = ${this._config && JSON.stringify(this._config.__META__) || '{}'}; 
 (function (factory) {
@@ -23,7 +25,15 @@ var __META__ = ${this._config && JSON.stringify(this._config.__META__) || '{}'};
 		module.exports = factory();
 	} else if (typeof define === "function" && define.amd) {
 		__META__.MODE = "AMD";
-		define([], function () { return factory(); });
+		var moduleRequired = __META__.REQUIRE = {};
+		var required = [${required.map(function (item) { return `'${item}'`; }) || ''}];
+		define([${required && required.map(function(k) { return me._config.require[k]; }) || ''}], function () { 
+			arguments.forEach(function(res, i) {
+				moduleRequired[required[i]] = res;
+			}); 
+			
+			return factory(); 
+		});
 	} else {
 		__META__.MODE = "";
 		var m = factory();
@@ -47,6 +57,7 @@ var __META__ = ${this._config && JSON.stringify(this._config.__META__) || '{}'};
 			link.href = res.replace(/\\\\/gi, "/");
 			return link.pathname.replace(/^\\//, '');
 		}
+
 		var define = function (id, dependencies, factory) {
 			return modules[id] = factory.apply(null, dependencies.map(function (d) { 
 				if (d !== "exports" && d !== "require") {
@@ -62,7 +73,7 @@ var __META__ = ${this._config && JSON.stringify(this._config.__META__) || '{}'};
 				}
 			})) || modules[id];
 		}
-		define.amd = true;
+		define.amd = {};
 		return define; 
 	})();
 

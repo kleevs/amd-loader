@@ -6,7 +6,15 @@ var __META__ = {};
 		module.exports = factory();
 	} else if (typeof define === "function" && define.amd) {
 		__META__.MODE = "AMD";
-		define([], function () { return factory(); });
+		var moduleRequired = __META__.REQUIRE = {};
+		var required = [];
+		define([], function () { 
+			arguments.forEach(function(res, i) {
+				moduleRequired[required[i]] = res;
+			}); 
+			
+			return factory(); 
+		});
 	} else {
 		__META__.MODE = "";
 		var m = factory();
@@ -30,6 +38,7 @@ var __META__ = {};
 			link.href = res.replace(/\\/gi, "/");
 			return link.pathname.replace(/^\//, '');
 		}
+
 		var define = function (id, dependencies, factory) {
 			return modules[id] = factory.apply(null, dependencies.map(function (d) { 
 				if (d !== "exports" && d !== "require") {
@@ -45,7 +54,7 @@ var __META__ = {};
 				}
 			})) || modules[id];
 		}
-		define.amd = true;
+		define.amd = {};
 		return define; 
 	})();
 
