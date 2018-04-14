@@ -8,22 +8,26 @@ export class DefaultLoader extends Loader {
     }
 
 	load(id: string): string {
-		var ignore = this.ignore(id);
-		var content = (!ignore || ignore instanceof Function) && fs.readFileSync(id).toString() || '';
-		return typeof(ignore) === "string" && ignore || (ignore && ignore instanceof Function && ignore(content)) || content;
+		var moduleid = this.isRequired(id);
+		var content = moduleid && `define([], function() { return ${moduleid}; });` || fs.readFileSync(id).toString() || '';
+		return content;
 	}
 	
-	private ignore(uri) {
+	private isRequired(uri) {
         var config: any = this._config || {};
-		var ignore;
+		var moduleid;
 		
-        config && config.ignore && config.ignore.some(path => {
-			if (uri.match(path.test)) {
-				ignore = `define([], ${path.result});`;
-				return true;
-			}
+        config && config.require && Object.keys(config.require).some(id => {
+			var path = config.require[id];
+			var paths = path instanceof Array ? path : [path];
+			return paths.some(path => {
+				if (uri.match(path.for)) {
+					moduleid = id;
+					return true;
+				}
+			});
 		});
 		
-		return ignore;
+		return moduleid;
     }
 }

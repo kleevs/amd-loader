@@ -26,13 +26,19 @@ export function load(uri) {
     });
 }
 
-export function define(dependencies, modulefactory) {
+export function define(modulefactory): (context?) => Promise<any>;
+export function define(dependencies, modulefactory): (context?) => Promise<any>;
+export function define(identifier, dependencies, modulefactory): (context?) => Promise<any>
+export function define(identifier, dependencies?, modulefactory?): (context?) => Promise<any> {
     var exp;
     var id = "...";
     if (arguments.length >= 3) {
         id = arguments[0];
         dependencies = arguments[1];
         modulefactory = arguments[2];
+    } else if (arguments.length === 2) {
+        dependencies = arguments[0];
+        modulefactory = arguments[1];
     } else if (arguments.length <= 1) {
         dependencies = [];
         modulefactory = arguments[0];
@@ -57,6 +63,10 @@ export function define(dependencies, modulefactory) {
             });
         })).then(function (result) {
             var module = modulefactory.apply(this, result) || exp;
+            if (id && id !== "...") { 
+                allmodules[id] = Promise.resolve(module); 
+                loadedmodules[id] = module;
+            };
             return module;
         });
     };
