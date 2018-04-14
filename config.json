@@ -6,6 +6,9 @@
         "match": "/?src\\/(.*)",
         "rewrite": "./src/$1"
     }, {
+        "match": "/?dist\\/(.*)",
+        "rewrite": "./dist/$1"
+    }, {
         "match": "(.*\\.[a-z]+)",
         "rewrite": "./example/simple$1"
     }, {

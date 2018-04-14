@@ -6,11 +6,11 @@
   "typings": "./src/index.d.ts",
   "scripts": {
     "tsc": "node_modules/.bin/tsc",
-	"tsc-build": "node_modules/.bin/tsc -p tsconfig.build.json",
-	"tsc-example": "node_modules/.bin/tsc -p tsconfig.example.json",
+    "tsc-build": "node_modules/.bin/tsc -p tsconfig.build.json",
+    "tsc-example": "node_modules/.bin/tsc -p tsconfig.example.json",
     "start": "node node_modules/server/.bin/server.js config.json",
-    "build": "npm run tsc && npm run tsc-build && npm run tsc-example && cp ./src/index.js ./dist/amd-loader.js",
-	"test": "node bin/amd-loader"
+    "build": "npm run tsc && npm run tsc-build && npm run tsc-example && node bin/amd-loader build-lib.js",
+    "test": "node bin/amd-loader"
   },
   "dependencies": {
   },

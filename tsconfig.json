@@ -5,6 +5,7 @@
     "experimentalDecorators": true,
     "sourceMap": false,
     "declaration": true,
+    "module": "umd",
     "moduleResolution": "classic",
     "emitDecoratorMetadata": true,
     "target": "es6",
@@ -22,7 +23,7 @@
   ],
   "exclude" : [
     "./node_modules",
-	"./code/build",
+	  "./code/build",
     "./src"
   ]
 }

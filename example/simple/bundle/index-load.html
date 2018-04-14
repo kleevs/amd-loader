@@ -8,11 +8,10 @@
 </head>
 
 <body>
-    <script src="../../../src/index.js"></script>
+    <script src="../../../dist/amd-loader.js"></script>
     <script>
-        require("./bundle", (bundle) => {
-            console.log("bundle load");
-			console.log(bundle);
+        AMDLoader.load("./bundle").then((bundle) => {
+            console.log("chargement du bundle fini.");
         });
     </script>
 </body>

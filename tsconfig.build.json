@@ -5,7 +5,7 @@
     "experimentalDecorators": true,
     "sourceMap": false,
     "declaration": true,
-	"module": "umd",
+	  "module": "umd",
     "moduleResolution": "classic",
     "emitDecoratorMetadata": true,
     "target": "es6",

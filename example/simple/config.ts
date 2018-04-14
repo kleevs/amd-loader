@@ -1,6 +1,7 @@
-console.log("yo");
+import { load } from "../../dist/amd-loader";
+console.log("chargement config en cours.");
 
-(<any>window).require("./index", () => {
-    console.log("parfait");
+load("./index").then(() => {
+    console.log("chargement de la lib fini.");
 });
 

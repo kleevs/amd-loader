@@ -1,11 +1,21 @@
-(function () {
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
+    }
+    else if (typeof define === "function" && define.amd) {
+        define(["require", "exports"], factory);
+    }
+})(function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
     var allmodules = { "...": {} };
     var loadedmodules = {};
-    var config;
+    var configuration;
     var getAbsoluteUri = (uri, context) => {
         var link = document.createElement("a");
-        if (config && config.path) {
-            config.path.some(path => {
+        if (configuration && configuration.path) {
+            configuration.path.some(path => {
                 if (uri.match(path.test)) {
                     uri = uri.replace(path.test, path.result);
                     return true;
@@ -15,14 +25,15 @@
         link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
         return link.href.replace(/^(.*)$/, '$1.js');
     };
-    var require = function (uri) {
+    function load(uri) {
         return new Promise(resolve => {
             var mod = define([uri], (module) => { resolve(module); });
             allmodules["..."] = {};
             mod();
         });
-    };
-    var define = function (dependencies, modulefactory) {
+    }
+    exports.load = load;
+    function define(dependencies, modulefactory) {
         var exp;
         var id = "...";
         if (arguments.length >= 3) {
@@ -57,12 +68,18 @@
                 return module;
             });
         };
-    };
-    var context = window;
-    define.amd = true;
-    context.define = define;
-    context.require = require;
-    context.require.config = (options) => {
-        config = options;
-    };
-})();
+    }
+    exports.define = define;
+    define.amd = {};
+    function config(options) {
+        configuration = options;
+    }
+    exports.config = config;
+    if (typeof __META__ === "undefined" || __META__.MODE !== "AMD") {
+        var context = window;
+        context.define = define;
+        var scripts = document.getElementsByTagName('script');
+        var path = scripts[scripts.length - 1].src.split('?')[0];
+        allmodules[path] = Promise.resolve(exports);
+    }
+});

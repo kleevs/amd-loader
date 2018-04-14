@@ -17,7 +17,8 @@
     const path = require("path");
     class Compiler {
         constructor(options) {
-            var fileName = path.join(process.cwd(), "build.js");
+            var conffile = process.argv[2];
+            var fileName = path.join(process.cwd(), conffile || "build.js");
             this.options = options || require(fileName);
         }
         apply(config) {

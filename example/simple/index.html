@@ -8,11 +8,10 @@
 </head>
 
 <body>
-    <script src="../../src/index.js"></script>
+    <script src="../../dist/amd-loader.js"></script>
     <script>
-        require("./config", (config) => {
-            console.log("yep");
-            console.log(config);
+        AMDLoader.load("./config").then((config) => {
+            console.log("chargement de la config fini.");
         });
     </script>
 </body>

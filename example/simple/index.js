@@ -12,9 +12,9 @@ define(["require", "exports", "./test", "./tools/test"], function (require, expo
             console.log("is script");
         }
     }
+    console.log("chargement de la lib en cours.");
     var tmp = new test_1.Test();
     var tmp2 = new test_2.Test();
-    console.log("yes");
     function maLib() {
         return "ma lib";
     }

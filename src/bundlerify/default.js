@@ -25,19 +25,22 @@
         }
         bundle(main) {
             var me = this;
-            var required = this._config && this._config.require && Object.keys(this._config.require);
+            var required = this._config && this._config.require && Object.keys(this._config.require) || [];
             return `(function() {
+var __MODE__ = typeof __META__ !== "undefined" && (__META__.MODE === "AMD" && "AMD" || __META__.MODE === "NODE" && "NODE") || undefined;
 var __META__ = ${this._config && JSON.stringify(this._config.__META__) || '{}'}; 
+__META__.MODE = __MODE__;
+__MODE__ = undefined;
 (function (factory) {
-	if (typeof module === "object" && typeof module.exports === "object") {
+	if (__META__.MODE === "NODE" || typeof module === "object" && typeof module.exports === "object") {
 		__META__.MODE = "NODE";
 		module.exports = factory();
-	} else if (typeof define === "function" && define.amd) {
+	} else if (__META__.MODE === "AMD" || typeof define === "function" && define.amd) {
 		__META__.MODE = "AMD";
 		var moduleRequired = __META__.REQUIRE = {};
-		var required = [${required.map(function (item) { return `'${item}'`; }) || ''}];
-		define([${required && required.map(function (k) { return me._config.require[k]; }) || ''}], function () { 
-			arguments.forEach(function(res, i) {
+		var required = [${required.map(function (item) { return `'${item}'`; })}];
+		define([${required.map(function (k) { return `'${me._config.require[k]}`; })}], function () { 
+			Array.prototype.forEach.call(arguments, function(res, i) {
 				moduleRequired[required[i]] = res;
 			}); 
 			

@@ -13,7 +13,8 @@ import * as path from 'path';
 export class Compiler {
     private options;
     constructor(options?) {
-        var fileName = path.join(process.cwd(), "build.js");
+		var conffile = process.argv[2];
+        var fileName = path.join(process.cwd(), conffile || "build.js");
         this.options = options || require(fileName);
     }
 

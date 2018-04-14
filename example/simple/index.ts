@@ -14,9 +14,10 @@ if (typeof __META__ !== "undefined" && __META__)
 	}
 }
 
+console.log("chargement de la lib en cours.");
+
 var tmp = new Test();
 var tmp2 = new Tool();
-console.log("yes");
 
 export function maLib() {
 	return "ma lib";

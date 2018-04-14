@@ -1,15 +1,18 @@
 (function() {
+var __MODE__ = typeof __META__ !== "undefined" && (__META__.MODE === "AMD" && "AMD" || __META__.MODE === "NODE" && "NODE") || undefined;
 var __META__ = {}; 
+__META__.MODE = __MODE__;
+__MODE__ = undefined;
 (function (factory) {
-	if (typeof module === "object" && typeof module.exports === "object") {
+	if (__META__.MODE === "NODE" || typeof module === "object" && typeof module.exports === "object") {
 		__META__.MODE = "NODE";
 		module.exports = factory();
-	} else if (typeof define === "function" && define.amd) {
+	} else if (__META__.MODE === "AMD" || typeof define === "function" && define.amd) {
 		__META__.MODE = "AMD";
 		var moduleRequired = __META__.REQUIRE = {};
 		var required = [];
 		define([], function () { 
-			arguments.forEach(function(res, i) {
+			Array.prototype.forEach.call(arguments, function(res, i) {
 				moduleRequired[required[i]] = res;
 			}); 
 			
@@ -107,9 +110,9 @@ var __META__ = {};
 	            console.log("is script");
 	        }
 	    }
+	    console.log("chargement de la lib en cours.");
 	    var tmp = new test_1.Test();
 	    var tmp2 = new test_2.Test();
-	    console.log("yes");
 	    function maLib() {
 	        return "ma lib";
 	    }
