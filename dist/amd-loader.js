@@ -130,6 +130,9 @@ __MODE__ = undefined;
 	        var href = (!match && uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
 	        href = href.replace(/^(.*)$/, '$1.js');
 	        href = normalize(href);
+	        var script = document.createElement('script');
+	        script.src = href;
+	        href = script.src;
 	        return href;
 	    };
 	    function load(uri) {
@@ -163,11 +166,10 @@ __MODE__ = undefined;
 	                if (dependency === "exports")
 	                    return exp = {};
 	                var src = getAbsoluteUri(dependency, context);
-	                var script = document.createElement('script');
-	                script.src = src;
-	                src = script.src;
-	                script.async = true;
 	                return allmodules[src] = allmodules[src] || new Promise(resolve => {
+	                    var script = document.createElement('script');
+	                    script.src = src;
+	                    script.async = true;
 	                    document.head.appendChild(script);
 	                    script.onload = script.onreadystatechange = () => {
 	                        allmodules[src] = allmodules["..."]["..."];
