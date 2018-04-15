@@ -62,8 +62,25 @@ __MODE__ = undefined;
 	var define = (function() {
 		var paths = [${this._config && this._config.path && this._config.path.map((item) => { return `{ test: /${item.test.source}/, result: ${JSON.stringify(item.result)} }`; }) || ''}];
 		var modules = {};
+		var normalize = function (path) {
+			var tmp = path.split("/");
+			var i = 0;
+			var last = -1;
+			while (i <tmp.length) {
+				if (tmp[i] === "..") {
+					tmp[i] = ".";
+					last > 0 && (tmp[last] = ".");
+					last-=2;
+				} else if (tmp[i] === ".") {
+					last--;
+				}
+				last++;
+				i++;
+			}
+
+			return tmp.filter(_ => _ !== ".").join("/");
+		}
 		var getUri = function(uri, context) {
-			var link = document.createElement("a");
 			paths.some(path => {
 				if (uri.match(path.test)) {
 					uri = uri.replace(path.test, path.result);
@@ -71,9 +88,10 @@ __MODE__ = undefined;
 				}
 			});
 			var href = (uri && !uri.match(/^\\//) && context && context.replace(/(\\/?)[^\\/]*$/, '$1') || '') + uri;
-			var res = href.replace(/^\\/?(.*)$/, '/$1.js');
-			link.href = res.replace(/\\\\/gi, "/");
-			return link.pathname.replace(/^\\//, '');
+			href = href.replace(/^\\/?(.*)$/, '/$1.js');
+			href = href.replace(/\\\\/gi, "/");
+			href = normalize(href);
+			return href.replace(/^\\//, '');
 		}
 
 		var define = function (id, dependencies, factory) {

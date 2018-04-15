@@ -1,35 +1,58 @@
 (function() {
+var __REQUIRE__ = {};
 var __MODE__ = typeof __META__ !== "undefined" && (__META__.MODE === "AMD" && "AMD" || __META__.MODE === "NODE" && "NODE") || undefined;
 var __META__ = {}; 
 __META__.MODE = __MODE__;
 __MODE__ = undefined;
-(function (factory) {
+(function (factory, context) {
 	if (__META__.MODE === "NODE" || typeof module === "object" && typeof module.exports === "object") {
 		__META__.MODE = "NODE";
-		module.exports = factory();
+		module.exports = factory(context);
 	} else if (__META__.MODE === "AMD" || typeof define === "function" && define.amd) {
 		__META__.MODE = "AMD";
-		var moduleRequired = __META__.REQUIRE = {};
+		var moduleRequired = __REQUIRE__ = {};
 		var required = [];
 		define([], function () { 
 			Array.prototype.forEach.call(arguments, function(res, i) {
 				moduleRequired[required[i]] = res;
 			}); 
 			
-			return factory(); 
+			return factory(context); 
 		});
 	} else {
 		__META__.MODE = "";
-		var m = factory();
+		var m = factory(context);
 		window.test = m;
 	}
 
-})(function () {
+})(function (context) {
+	var throw_exception = function (msg) { throw msg; };
+	
+	__REQUIRE__ = undefined;
+	throw_exception = undefined;
+	context = undefined;
 	var define = (function() {
 		var paths = [];
 		var modules = {};
+		var normalize = function (path) {
+			var tmp = path.split("/");
+			var i = 0;
+			var last = -1;
+			while (i <tmp.length) {
+				if (tmp[i] === "..") {
+					tmp[i] = ".";
+					last > 0 && (tmp[last] = ".");
+					last-=2;
+				} else if (tmp[i] === ".") {
+					last--;
+				}
+				last++;
+				i++;
+			}
+
+			return tmp.filter(_ => _ !== ".").join("/");
+		}
 		var getUri = function(uri, context) {
-			var link = document.createElement("a");
 			paths.some(path => {
 				if (uri.match(path.test)) {
 					uri = uri.replace(path.test, path.result);
@@ -37,9 +60,10 @@ __MODE__ = undefined;
 				}
 			});
 			var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-			var res = href.replace(/^\/?(.*)$/, '/$1.js');
-			link.href = res.replace(/\\/gi, "/");
-			return link.pathname.replace(/^\//, '');
+			href = href.replace(/^\/?(.*)$/, '/$1.js');
+			href = href.replace(/\\/gi, "/");
+			href = normalize(href);
+			return href.replace(/^\//, '');
 		}
 
 		var define = function (id, dependencies, factory) {
@@ -123,5 +147,5 @@ __MODE__ = undefined;
 	return define('export', ["example/simple/index"], function(m) { 
 		return m;
 	});
-});
+}, typeof window !== "undefined" && window || {});
 })()

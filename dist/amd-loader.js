@@ -34,8 +34,25 @@ __MODE__ = undefined;
 	var define = (function() {
 		var paths = [];
 		var modules = {};
+		var normalize = function (path) {
+			var tmp = path.split("/");
+			var i = 0;
+			var last = -1;
+			while (i <tmp.length) {
+				if (tmp[i] === "..") {
+					tmp[i] = ".";
+					last > 0 && (tmp[last] = ".");
+					last-=2;
+				} else if (tmp[i] === ".") {
+					last--;
+				}
+				last++;
+				i++;
+			}
+
+			return tmp.filter(_ => _ !== ".").join("/");
+		}
 		var getUri = function(uri, context) {
-			var link = document.createElement("a");
 			paths.some(path => {
 				if (uri.match(path.test)) {
 					uri = uri.replace(path.test, path.result);
@@ -43,9 +60,10 @@ __MODE__ = undefined;
 				}
 			});
 			var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-			var res = href.replace(/^\/?(.*)$/, '/$1.js');
-			link.href = res.replace(/\\/gi, "/");
-			return link.pathname.replace(/^\//, '');
+			href = href.replace(/^\/?(.*)$/, '/$1.js');
+			href = href.replace(/\\/gi, "/");
+			href = normalize(href);
+			return href.replace(/^\//, '');
 		}
 
 		var define = function (id, dependencies, factory) {
@@ -81,8 +99,25 @@ __MODE__ = undefined;
 	    var allmodules = { "...": {} };
 	    var loadedmodules = {};
 	    var configuration;
+	    var normalize = function (path) {
+	        var tmp = path.split("/");
+	        var i = 0;
+	        var last = -1;
+	        while (i < tmp.length) {
+	            if (tmp[i] === "..") {
+	                tmp[i] = ".";
+	                last > 0 && (tmp[last] = ".");
+	                last -= 2;
+	            }
+	            else if (tmp[i] === ".") {
+	                last--;
+	            }
+	            last++;
+	            i++;
+	        }
+	        return tmp.filter(_ => _ !== ".").join("/");
+	    };
 	    var getAbsoluteUri = (uri, context) => {
-	        var link = document.createElement("a");
 	        if (configuration && configuration.path) {
 	            configuration.path.some(path => {
 	                if (uri.match(path.test)) {
@@ -91,8 +126,10 @@ __MODE__ = undefined;
 	                }
 	            });
 	        }
-	        link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
-	        return link.href.replace(/^(.*)$/, '$1.js');
+	        var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+	        href = href.replace(/^(.*)$/, '$1.js');
+	        href = normalize(href);
+	        return href;
 	    };
 	    function load(uri) {
 	        return new Promise(resolve => {
@@ -125,10 +162,11 @@ __MODE__ = undefined;
 	                if (dependency === "exports")
 	                    return exp = {};
 	                var src = getAbsoluteUri(dependency, context);
+	                var script = document.createElement('script');
+	                script.src = src;
+	                src = script.src;
+	                script.async = true;
 	                return allmodules[src] = allmodules[src] || new Promise(resolve => {
-	                    var script = document.createElement('script');
-	                    script.async = true;
-	                    script.src = src;
 	                    document.head.appendChild(script);
 	                    script.onload = script.onreadystatechange = () => {
 	                        allmodules[src] = allmodules["..."]["..."];

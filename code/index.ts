@@ -3,8 +3,26 @@ var allmodules = { "...": {} };
 var loadedmodules = {};
 var configuration;
 
+var normalize = function (path) {
+    var tmp = path.split("/");
+    var i = 0;
+    var last = -1;
+    while (i <tmp.length) {
+        if (tmp[i] === "..") {
+            tmp[i] = ".";
+            last > 0 && (tmp[last] = ".");
+            last-=2;
+        } else if (tmp[i] === ".") {
+            last--;
+        }
+        last++;
+        i++;
+    }
+
+    return tmp.filter(_ => _ !== ".").join("/");
+}
+
 var getAbsoluteUri = (uri, context?) => {
-    var link = document.createElement("a");
     if (configuration && configuration.path) { 
         configuration.path.some(path => {
             if (uri.match(path.test)) {
@@ -14,8 +32,10 @@ var getAbsoluteUri = (uri, context?) => {
         });
     }
     
-    link.href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;   
-    return link.href.replace(/^(.*)$/, '$1.js');
+    var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+    href = href.replace(/^(.*)$/, '$1.js'); 
+    href = normalize(href);  
+    return href;
 }
 
 export function load(uri) {
@@ -49,11 +69,12 @@ export function define(identifier, dependencies?, modulefactory?): (context?) =>
             if (dependency === "require") return (uri) => loadedmodules[getAbsoluteUri(uri, context)];
             if (dependency === "exports") return exp = {};
             var src = getAbsoluteUri(dependency, context);
+            var script = document.createElement('script');
+            script.src = src;
+            src = script.src;
+            script.async = true;
 
             return allmodules[src] = allmodules[src] || new Promise(resolve => {
-                var script = document.createElement('script');
-                script.async = true;
-                script.src = src;
                 document.head.appendChild(script);
                 script.onload = (<any>script).onreadystatechange = () => {
                     allmodules[src] = allmodules["..."]["..."];
