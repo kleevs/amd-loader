@@ -118,15 +118,16 @@ __MODE__ = undefined;
 	        return tmp.filter(_ => _ !== ".").join("/");
 	    };
 	    var getAbsoluteUri = (uri, context) => {
+	        var match = false;
 	        if (configuration && configuration.path) {
 	            configuration.path.some(path => {
 	                if (uri.match(path.test)) {
 	                    uri = uri.replace(path.test, path.result);
-	                    return true;
+	                    return match = true;
 	                }
 	            });
 	        }
-	        var href = (uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
+	        var href = (!match && uri && !uri.match(/^\//) && context && context.replace(/(\/?)[^\/]*$/, '$1') || '') + uri;
 	        href = href.replace(/^(.*)$/, '$1.js');
 	        href = normalize(href);
 	        return href;
