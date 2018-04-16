@@ -174,7 +174,7 @@ __MODE__ = undefined;
 	                    script.onload = script.onreadystatechange = () => {
 	                        allmodules[src] = allmodules["..."]["..."];
 	                        allmodules["..."] = {};
-	                        allmodules[src] = allmodules[src] && allmodules[src](src).then(module => resolve(loadedmodules[src] = module)) || resolve();
+	                        allmodules[src] = allmodules[src] && allmodules[src](src).then(module => { resolve(loadedmodules[src] = module); return module; }) || resolve();
 	                    };
 	                });
 	            })).then(function (result) {
